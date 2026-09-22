@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CreaTicket</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --samsung-blue: #007AFF; 
+            --samsung-bg: transparent;
+            --samsung-card: rgba(255, 255, 255, 0.65); 
+            --samsung-text: #1D1D1F;
+            --samsung-secondary: #8E8E93;
+            --samsung-success: #34C759; 
+            --samsung-danger: #FF3B30;
+            --radius: 32px;
+            --transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top left, #E4EBF5, #F4F6F9, #EBE6F3);
+            background-attachment: fixed;
+            color: var(--samsung-text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+             min-height: 100% !important;
+            overflow-x: hidden !important;
+        }
+
+        header {
+            padding: 40px 24px 20px;
+            background-color: transparent;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 { font-family: 'Poppins', sans-serif; font-size: 28px; margin: 0; }
+        
+        .btn-icon { background: none; border: none; font-size: 24px; color: var(--samsung-blue); cursor: pointer; }
+
+        #settings-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(244, 246, 249, 0.85); 
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            z-index: 100;
+            display: none; padding: 40px 20px; overflow-y: auto;
+        }
+
+        main { flex: 1; overflow-y: auto; padding: 0 20px 100px; } 
+        .tab-view { display: none; }
+        .tab-view.active { display: block; animation: fadeIn 0.4s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { 
+            background: var(--samsung-card); 
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: var(--radius); 
+            padding: 24px; 
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06); 
+            margin-bottom: 20px; 
+        }
+
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; font-size: 13px; font-weight: 600; color: var(--samsung-secondary); margin-bottom: 8px; margin-left: 4px; }
+        input, select { 
+            width: 100%; 
+            background: rgba(255, 255, 255, 0.7); 
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+            padding: 18px 20px; border-radius: 20px; font-size: 16px; font-weight: 500; font-family: inherit; color: var(--samsung-text); outline: none; 
+            transition: var(--transition);
+        }
+        input:focus { background: #fff; box-shadow: 0 4px 12px rgba(0,122,255,0.1); border-color: rgba(0,122,255,0.3); }
+        
+        .btn-calc { width: 100%; background-color: var(--samsung-blue); color: white; border: none; padding: 18px; border-radius: 22px; font-size: 16px; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.1s; box-shadow: 0 8px 16px rgba(0, 122, 255, 0.2); }
+        .btn-calc:active { transform: scale(0.96); }
+
+        .result-box { display: none; margin-top: 24px; padding: 20px; background: rgba(255,255,255,0.5); border-radius: 24px; border: 1px solid rgba(255,255,255,0.6); }
+        .res-line { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 15px; }
+        .val { font-weight: 600; }
+        .price-val { font-size: 20px; color: var(--samsung-success); font-weight: bold; }
+
+        /* ==========================================
+           BARRA LIQUID GLASS iOS — ULTRA TRANSLÚCIDA + SLIDE
+        ========================================== */
+        .bottom-nav {
+            position: fixed; bottom: max(18px, env(safe-area-inset-bottom)); left: 50%;
+            transform: translateX(-50%) translateZ(0); -webkit-transform: translateX(-50%) translateZ(0);
+            width: calc(100% - 36px); max-width: 400px; height: 64px;
+            background: linear-gradient(180deg, rgba(255,255,255,.105), rgba(255,255,255,.035));
+            -webkit-backdrop-filter: blur(13px) saturate(185%) brightness(1.08);
+            backdrop-filter: blur(13px) saturate(185%) brightness(1.08);
+            border: 1px solid rgba(255,255,255,.38); border-radius: 999px;
+            box-shadow: 0 12px 34px rgba(24,34,48,.13), inset 0 1px 0 rgba(255,255,255,.62), inset 0 -1px 0 rgba(255,255,255,.10);
+            display:flex; align-items:center; z-index:50; padding:5px; isolation:isolate; overflow:hidden;
+            touch-action: pan-y; user-select:none; -webkit-user-select:none;
+        }
+        .bottom-nav::before {
+            content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-2;
+            background: radial-gradient(90% 120% at 18% -30%,rgba(255,255,255,.46),transparent 55%), radial-gradient(70% 100% at 88% 130%,rgba(120,180,255,.10),transparent 65%);
+        }
+        .bottom-nav::after {
+            content:''; position:absolute; inset:1px; border-radius:inherit; pointer-events:none; z-index:4;
+            border:1px solid rgba(255,255,255,.12); box-shadow:inset 0 5px 10px rgba(255,255,255,.05);
+        }
+        .nav-slider {
+            position:absolute; z-index:0; top:5px; left:5px; height:54px;
+            width:calc((100% - 10px) / 3); border-radius:999px; pointer-events:none;
+            background:linear-gradient(180deg,rgba(255,255,255,.25),rgba(255,255,255,.075));
+            -webkit-backdrop-filter:blur(8px) saturate(190%) brightness(1.12);
+            backdrop-filter:blur(8px) saturate(190%) brightness(1.12);
+            border:1px solid rgba(255,255,255,.42);
+            box-shadow:0 5px 16px rgba(20,35,55,.10), inset 0 1px 0 rgba(255,255,255,.68), inset 0 -1px 0 rgba(255,255,255,.08);
+            transform:translate3d(0,0,0); will-change:transform;
+            transition:transform .42s cubic-bezier(.22,1,.36,1), width .2s ease;
+        }
+        .nav-slider::before {
+            content:''; position:absolute; inset:1px; border-radius:inherit;
+            background:radial-gradient(100% 90% at 50% -12%,rgba(255,255,255,.40),transparent 58%);
+            border-top:1px solid rgba(255,255,255,.25);
+        }
+        .bottom-nav.dragging .nav-slider { transition:none; }
+        .bottom-nav.dragging { -webkit-backdrop-filter:blur(12px) saturate(195%) brightness(1.1); backdrop-filter:blur(12px) saturate(195%) brightness(1.1); }
+        .nav-item {
+            position:relative; z-index:2; flex:1; height:54px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+            border:0; background:transparent !important; box-shadow:none !important; color:rgba(60,60,67,.64); cursor:pointer;
+            font-family:inherit; font-size:10px; line-height:1; font-weight:600; letter-spacing:-.1px; gap:4px; padding:4px 3px; border-radius:999px;
+            transition:color .22s ease, transform .18s ease; -webkit-appearance:none; appearance:none;
+        }
+        .nav-item i { font-size:19px; line-height:1; transition:transform .22s cubic-bezier(.2,.8,.2,1),filter .22s ease; }
+        .nav-item.active { color:var(--samsung-blue); }
+        .nav-item.active::before { display:none; }
+        .nav-item.active i { transform:translateY(-1px) scale(1.04); filter:drop-shadow(0 1px 3px rgba(0,122,255,.14)); }
+        .nav-item:active { transform:scale(.95); }
+        @supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))) { .bottom-nav{background:rgba(245,247,250,.78)} .nav-slider{background:rgba(255,255,255,.55)} }
+
+        #calc-menu-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.2); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+            z-index: 100; display: none; justify-content: center; align-items: flex-end;
+        }
+        .bottom-sheet {
+            background: rgba(244, 246, 249, 0.85); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            width: 100%; border-radius: 32px 32px 0 0; border-top: 1px solid rgba(255,255,255,0.5);
+            padding: 32px 24px 40px; box-shadow: 0 -4px 32px rgba(0,0,0,0.15);
+            transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .bottom-sheet.open { transform: translateY(0); }
+        .menu-list { list-style: none; padding: 0; margin: 0; }
+        .menu-list li {
+            padding: 20px; background: rgba(255, 255, 255, 0.7); margin-bottom: 12px;
+            border-radius: 20px; font-weight: 600; font-size: 16px; color: var(--samsung-text);
+            display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02); border: 1px solid rgba(255,255,255,0.4);
+            transition: var(--transition);
+        }
+        .menu-list li:active { transform: scale(0.96); background: rgba(255,255,255,0.9); }
+        .menu-list li i { color: var(--samsung-blue); }
+        .back-btn { font-size: 15px; color: var(--samsung-blue); cursor: pointer; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+
+        .pos-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .pos-header-bar h3 { margin: 0; font-weight: 700; font-size: 1.3em; font-family: 'Poppins', sans-serif; }
+        #pos_configSection { display: none; background: rgba(255,255,255,0.4); padding: 18px; border-radius: 24px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.5); }
+        
+        .pos-prod-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; width: 100%; align-items: center; }
+        .pos-prod-row input { padding: 14px 16px; border-radius: 16px; font-size: 15px; }
+        
+        .pos-btn { width: 100%; padding: 16px; border: none; border-radius: 20px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: opacity 0.2s, transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .pos-btn:active { transform: scale(0.98); }
+        
+        .pos-btn-add { background: var(--samsung-success); color: white; box-shadow: 0 4px 12px rgba(52, 199, 89, 0.2); }
+        .pos-btn-new { background: rgba(255,255,255,0.8); color: var(--samsung-text); margin-bottom: 15px; margin-top: 0; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        .pos-btn-whatsapp { background: #25D366; color: white; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2); }
+        .pos-btn-share-img { background: var(--samsung-secondary); color: white; }
+        .pos-btn-view { background: var(--samsung-blue); color: white; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2); }
+        .pos-btn-delete { background: transparent; color: var(--samsung-danger); font-weight: 500; }
+        .pos-btn-del-row { background: var(--samsung-danger); color: white; width: 48px; height: 48px; border-radius: 16px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+
+        .pos-pago-section { margin: 20px 0; padding: 18px; background: rgba(255,255,255,0.5); border-radius: 24px; border: 1px solid rgba(255,255,255,0.6); }
+        .pos-checkbox-label { display: flex; align-items: center; cursor: pointer; font-weight: 600; font-size: 15px; margin-top: 12px; color: var(--samsung-text); }
+        .pos-checkbox-label input { width: 22px; height: 22px; margin-right: 12px; accent-color: var(--samsung-success); }
+
+        #pos_ticket_wrapper { display: none; margin-top: 24px; display: flex; justify-content: center; }
+        #pos_ticket { position: relative; width: 100%; max-width: 320px; font-family: 'Courier New', Courier, monospace; border: 1px solid #e0e0e0; padding: 20px; background: #fff; color: #000; box-shadow: 0 12px 24px rgba(0,0,0,0.08); display: none; border-radius: 8px; }
+        .pos-stamp { display: none; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) rotate(-20deg); border: 4px solid #ff0000; color: #ff0000; padding: 5px 15px; font-size: 2em; font-weight: 900; opacity: 0.4; pointer-events: none; z-index: 10; }
+        #pos_selloCotizacion { border-color: #0A84FF !important; color: #0A84FF !important; }
+        .pos-ticket-header { text-align: center; font-weight: bold; font-size: 1.1em; }
+        .pos-linea { border-bottom: 1px dashed #000; margin: 12px 0; }
+        .pos-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9em; }
+        .pos-total-final { font-weight: bold; font-size: 1.1em; border-top: 1px solid #000; padding-top: 8px; margin-top: 8px; text-align: center; }
+
+        /* PEDIDOS */
+        .pedidos-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+        .pedidos-summary-item{background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.7);border-radius:20px;padding:14px 8px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.03)}
+        .pedidos-summary-item strong{display:block;font-family:'Poppins',sans-serif;font-size:22px;line-height:1.1}.pedidos-summary-item span{display:block;margin-top:5px;color:var(--samsung-secondary);font-size:11px;font-weight:600}
+        .pedidos-search{margin-bottom:18px;position:relative}.pedidos-search i{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:var(--samsung-secondary);font-size:14px;pointer-events:none}.pedidos-search input{padding-left:44px}
+        .pedidos-section{margin-bottom:24px}.pedidos-section-title{margin:0 0 10px 4px;font-family:'Poppins',sans-serif;font-size:15px;font-weight:600}
+        .pedido-card{padding:17px;border-radius:24px;margin-bottom:10px;cursor:pointer}.pedido-card:active{transform:scale(.985)}
+        .pedido-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}.pedido-cliente{font-family:'Poppins',sans-serif;font-size:16px;font-weight:600;line-height:1.25}.pedido-fecha{color:var(--samsung-secondary);font-size:12px;font-weight:600;margin-top:3px}
+        .pedido-productos{color:var(--samsung-secondary);font-size:13px;line-height:1.4;margin-bottom:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pedido-money-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;border-top:1px solid rgba(0,0,0,.05);padding-top:11px}.pedido-money-grid span{display:block;color:var(--samsung-secondary);font-size:10px;font-weight:600;margin-bottom:3px}.pedido-money-grid strong{display:block;font-size:13px}
+        .pedido-status{border:0;border-radius:999px;padding:7px 10px;width:auto;min-width:92px;font-size:11px;font-weight:700;box-shadow:none}.pedido-status.pendiente{color:#9A6700;background:rgba(255,149,0,.15)}.pedido-status.proceso{color:var(--samsung-blue);background:rgba(0,122,255,.12)}.pedido-status.listo{color:var(--samsung-success);background:rgba(52,199,89,.13)}.pedido-status.entregado{color:var(--samsung-secondary);background:rgba(142,142,147,.14)}
+        .pedidos-empty{text-align:center;color:var(--samsung-secondary);font-size:14px;padding:30px 15px}.pedidos-history{overflow:hidden;padding:0}.pedidos-history summary{list-style:none;cursor:pointer;padding:18px 20px;font-family:'Poppins',sans-serif;font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:space-between}.pedidos-history summary::-webkit-details-marker{display:none}.pedidos-history[open] summary i{transform:rotate(180deg)}.pedidos-history-body{padding:0 14px 14px}
+        #pedido-detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.2);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:110;display:none;align-items:flex-end;justify-content:center}
+        #pedido-detail-sheet{width:100%;max-width:520px;max-height:88vh;overflow-y:auto;background:rgba(244,246,249,.92);backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);border-radius:32px 32px 0 0;border-top:1px solid rgba(255,255,255,.6);padding:26px 20px 34px;box-shadow:0 -4px 32px rgba(0,0,0,.16);transform:translateY(100%);transition:transform .35s cubic-bezier(.25,1,.5,1)}
+        #pedido-detail-sheet.open{transform:translateY(0)}.pedido-detail-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.pedido-detail-head h3{margin:0;font-family:'Poppins',sans-serif;font-size:20px}.pedido-detail-close{width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.75);color:var(--samsung-secondary);font-size:17px;cursor:pointer}.pedido-detail-info{padding:16px;border-radius:22px;background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.65);margin-bottom:16px}.pedido-detail-row{display:flex;justify-content:space-between;gap:16px;font-size:13px;margin-bottom:9px}.pedido-detail-row span:first-child{color:var(--samsung-secondary)}.pedido-detail-products{font-size:13px;line-height:1.45;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,.05)}
+        #pedido-detail-sheet textarea{width:100%;min-height:105px;resize:vertical;background:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.8);padding:16px 18px;border-radius:20px;font-size:15px;font-family:inherit;color:var(--samsung-text);outline:none}
+
+    
+        .calc-inline-menu { margin-bottom: 0; }
+        .calc-inline-menu li:last-child { margin-bottom: 0; }
+    
+        .settings-folds {
+            display: grid;
+            gap: 12px;
+            margin-top: 22px;
+            margin-bottom: 8px;
+        }
+        .settings-fold {
+            border: 1px solid rgba(0,0,0,0.07);
+            border-radius: 20px;
+            background: rgba(255,255,255,0.46);
+            overflow: hidden;
+        }
+        .settings-fold-head {
+            width: 100%;
+            min-height: 58px;
+            border: 0;
+            background: transparent;
+            padding: 0 17px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            color: var(--samsung-text);
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: left;
+            cursor: pointer;
+        }
+        .settings-fold-head span {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .settings-fold-head span > i {
+            color: var(--samsung-blue);
+            width: 18px;
+            text-align: center;
+        }
+        .settings-fold-chevron {
+            color: var(--samsung-secondary);
+            transition: transform .28s cubic-bezier(.2,.8,.2,1);
+        }
+        .settings-fold.open .settings-fold-chevron {
+            transform: rotate(180deg);
+        }
+        .settings-fold-body {
+            display: none;
+            padding: 2px 15px 16px;
+            border-top: 1px solid rgba(0,0,0,0.055);
+        }
+        .settings-fold.open .settings-fold-body {
+            display: block;
+        }
+
+
+
+        /* ==========================================
+           MODO OSCURO AUTOMÁTICO — SISTEMA
+           Solo apariencia: no modifica funciones.
+        ========================================== */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --samsung-blue: #0A84FF;
+                --samsung-bg: transparent;
+                --samsung-card: rgba(30, 30, 32, 0.72);
+                --samsung-text: #F5F5F7;
+                --samsung-secondary: #A1A1A6;
+                --samsung-success: #30D158;
+                --samsung-danger: #FF453A;
+            }
+
+            html { color-scheme: dark; }
+
+            body {
+                background: radial-gradient(circle at top left, #20242B, #111214 52%, #19161F);
+                color: var(--samsung-text);
+            }
+
+            #settings-overlay {
+                background: rgba(15, 16, 18, 0.88);
+            }
+
+            .card {
+                background: rgba(31, 32, 35, 0.72);
+                border-color: rgba(255,255,255,0.10);
+                box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+            }
+
+            input, select,
+            #pedido-detail-sheet textarea {
+                background: rgba(255,255,255,0.075) !important;
+                border-color: rgba(255,255,255,0.11) !important;
+                color: var(--samsung-text) !important;
+                box-shadow: inset 0 1px 0 rgba(255,255,255,0.025);
+            }
+
+            input::placeholder,
+            textarea::placeholder { color: rgba(235,235,245,.38); }
+
+            input:focus, select:focus, textarea:focus {
+                background: rgba(255,255,255,0.105) !important;
+                border-color: rgba(10,132,255,.55) !important;
+                box-shadow: 0 0 0 3px rgba(10,132,255,.12) !important;
+            }
+
+            select option { background: #242426; color: #F5F5F7; }
+
+            .result-box,
+            .pos-pago-section,
+            .pedidos-summary-item,
+            .pedido-detail-info,
+            #pos_configSection,
+            .settings-fold {
+                background: rgba(255,255,255,.055);
+                border-color: rgba(255,255,255,.09);
+            }
+
+            .menu-list li,
+            .pos-btn-new,
+            .pedido-detail-close {
+                background: rgba(255,255,255,.08);
+                color: var(--samsung-text);
+                border-color: rgba(255,255,255,.09);
+                box-shadow: 0 4px 12px rgba(0,0,0,.10);
+            }
+
+            .menu-list li:active { background: rgba(255,255,255,.13); }
+
+            .bottom-sheet,
+            #pedido-detail-sheet {
+                background: rgba(28,29,32,.90);
+                border-color: rgba(255,255,255,.12);
+                box-shadow: 0 -4px 32px rgba(0,0,0,.35);
+            }
+
+            .bottom-nav {
+                background: linear-gradient(180deg, rgba(50,50,54,.42), rgba(24,24,27,.30));
+                border-color: rgba(255,255,255,.17);
+                box-shadow: 0 12px 34px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.18), inset 0 -1px 0 rgba(255,255,255,.035);
+            }
+
+            .bottom-nav::before {
+                background: radial-gradient(90% 120% at 18% -30%,rgba(255,255,255,.16),transparent 55%), radial-gradient(70% 100% at 88% 130%,rgba(10,132,255,.10),transparent 65%);
+            }
+
+            .bottom-nav::after { border-color: rgba(255,255,255,.055); }
+
+            .nav-slider {
+                background: linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.055));
+                border-color: rgba(255,255,255,.18);
+                box-shadow: 0 5px 16px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(255,255,255,.035);
+            }
+
+            .nav-slider::before {
+                background: radial-gradient(100% 90% at 50% -12%,rgba(255,255,255,.16),transparent 58%);
+                border-top-color: rgba(255,255,255,.12);
+            }
+
+            .nav-item { color: rgba(235,235,245,.60); }
+            .nav-item.active { color: var(--samsung-blue); }
+
+            .pedido-money-grid,
+            .pedido-detail-products,
+            .settings-fold-body,
+            #view-pos .card > div[style*="border-bottom"] {
+                border-color: rgba(255,255,255,.08) !important;
+            }
+
+            .settings-fold { border-color: rgba(255,255,255,.09); }
+            .settings-fold-body { border-top-color: rgba(255,255,255,.07); }
+
+            #calc-menu-overlay,
+            #pedido-detail-overlay { background: rgba(0,0,0,.46); }
+
+            /* El ticket conserva papel blanco para previsualización, imagen e impresión. */
+            #pos_ticket {
+                background: #fff !important;
+                color: #000 !important;
+                border-color: #d8d8d8 !important;
+                color-scheme: light;
+            }
+
+            #pos_ticket * { color: inherit; }
+            #pos_ticket #pos_selloPagado { color: #ff0000 !important; border-color: #ff0000 !important; }
+            #pos_ticket #pos_selloCotizacion { color: #0A84FF !important; border-color: #0A84FF !important; }
+
+            @supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))) {
+                .bottom-nav { background: rgba(32,32,35,.94); }
+                .nav-slider { background: rgba(255,255,255,.10); }
+            }
+        }
+
+    </style>
+</head>
+<body onload="appInit()">
+
+    <svg style="width: 0; height: 0; position: absolute;" aria-hidden="true">
+        <filter id="liquid-refraction" color-interpolation-filters="sRGB">
+            <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="1" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+    </svg>
+
+    <header>
+        <h1 id="header-title">Ticket</h1>
+        <button class="btn-icon" onclick="toggleSettings()"><i class="fa-solid fa-gear"></i></button>
+    </header>
+
+    <div id="settings-overlay">
+        <h2>Configuración</h2>
+        <div class="card">
+            <div class="input-group"><label>Multiplicador de Venta (Ej: 3, 5)</label><input type="number" id="multiplier" step="0.1" oninput="saveConfig()"></div>
+            
+            <p style="font-size: 15px; font-weight: 700; color: var(--samsung-text); margin-bottom: 16px; margin-top: 32px; text-transform: uppercase;">Materiales de Cálculo</p>
+
+            
+
+
+                
+            <div class="settings-folds">
+                <div class="settings-fold">
+                    <button type="button" class="settings-fold-head" onclick="toggleSettingsFold('machines-settings-fold', this)">
+                        <span><i class="fa-solid fa-gears"></i> Máquinas y materiales</span>
+                        <i class="fa-solid fa-chevron-down settings-fold-chevron"></i>
+                    </button>
+                    <div id="machines-settings-fold" class="settings-fold-body">
+                        <div id="cfg-machines-list"></div>
+            <button class="pos-btn pos-btn-new" onclick="addMachine()" style="margin-bottom:24px;"><i class="fa-solid fa-plus"></i> Agregar Máquina / Categoría</button>
+                        <p style="font-size: 13px; font-weight: 600; color: var(--samsung-secondary); margin-bottom: 12px; margin-top: 24px;">Configuración Adicional 3D:</p>
+                        <div class="input-group"><label>Costo de Tiempo ($ / minuto)</label><input type="number" id="price-time3d" step="0.0001" oninput="saveConfig()"></div>
+                    
+                    </div>
+                </div>
+
+                <div class="settings-fold">
+                    <button type="button" class="settings-fold-head" onclick="toggleSettingsFold('store-settings-fold', this)">
+                        <span><i class="fa-solid fa-shop"></i> Datos de tu tienda</span>
+                        <i class="fa-solid fa-chevron-down settings-fold-chevron"></i>
+                    </button>
+                    <div id="store-settings-fold" class="settings-fold-body">
+
+                        <div id="pos_configSection" style="display:block;">
+                    <label style="display:block; font-size:12px; font-weight:600; color:var(--samsung-secondary); margin-bottom:6px;">DATOS DE TU TIENDA EN EL TICKET</label>
+                    
+                    <input type="file" id="pos_logoUpload" accept="image/*" onchange="pos_cargarLogo(event)" style="display: none;">
+                    <button class="pos-btn pos-btn-new" onclick="document.getElementById('pos_logoUpload').click()" style="margin-bottom: 10px; padding: 12px; font-size: 14px;"><i class="fa-solid fa-image"></i> Cargar Logo</button>
+                    <div style="text-align: center;">
+                        <img id="pos_logoPreview" style="display:none; max-height: 60px; margin-bottom: 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1);">
+                    </div>
+
+                    <input type="text" id="pos_nombreTiendaGlobal" placeholder="Nombre de tu Tienda" oninput="pos_guardarTienda()" style="margin-bottom: 10px; background:rgba(255,255,255,0.8);">
+                    <input type="text" id="pos_direccionTienda" placeholder="Dirección" oninput="pos_guardarTienda()" style="margin-bottom: 10px; background:rgba(255,255,255,0.8);">
+                    <input type="text" id="pos_telefonoTienda" placeholder="Teléfono" oninput="pos_guardarTienda()" style="background:rgba(255,255,255,0.8);">
+                </div>
+                    </div>
+                </div>
+
+                <div class="settings-fold">
+                    <button type="button" class="settings-fold-head" onclick="toggleSettingsFold('backup-settings-fold', this)">
+                        <span><i class="fa-solid fa-cloud-arrow-down"></i> Copia de seguridad</span>
+                        <i class="fa-solid fa-chevron-down settings-fold-chevron"></i>
+                    </button>
+                    <div id="backup-settings-fold" class="settings-fold-body">
+                        <p style="font-size:12px; line-height:1.55; color:var(--samsung-secondary); margin:14px 2px 16px;">
+                            Guarda todos los datos de CreaTicket en un archivo para poder restaurarlos en este u otro dispositivo.
+                        </p>
+                        <button type="button" class="pos-btn pos-btn-new" onclick="crearCopiaSeguridad()" style="margin-bottom:10px;">
+                            <i class="fa-solid fa-download"></i> Crear copia de seguridad
+                        </button>
+                        <button type="button" class="pos-btn" onclick="document.getElementById('backupFileInput').click()" style="margin-bottom:4px;">
+                            <i class="fa-solid fa-upload"></i> Restaurar copia de seguridad
+                        </button>
+                        <input type="file" id="backupFileInput" accept=".json,application/json" onchange="restaurarCopiaSeguridad(event)" style="display:none;">
+                    
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <button class="btn-calc" style="background:#8E8E93; margin-bottom: 40px;" onclick="toggleSettings()">Cerrar</button>
+    </div>
+
+    <div id="calc-menu-overlay" onclick="closeCalcMenu(event)">
+        <div class="bottom-sheet" id="calc-bottom-sheet" onclick="event.stopPropagation()">
+            <div id="menu-main">
+                <h3 style="margin-top:0; font-family:'Poppins', sans-serif; font-size:20px; margin-bottom: 20px;">¿Que desea</h3>
+                <ul class="menu-list">
+                    <li onclick="showSubMenu('laser')">Láser <i class="fa-solid fa-chevron-right"></i></li>
+                    <li onclick="showSubMenu('cricut')">Cricut <i class="fa-solid fa-chevron-right"></i></li>
+                    <li onclick="showSubMenu('3d')">3D <i class="fa-solid fa-chevron-right"></i></li>
+                </ul>
+            </div>
+            <div id="menu-laser" style="display:none;">
+                <div class="back-btn" onclick="showSubMenu('main')"><i class="fa-solid fa-arrow-left"></i> Volver</div>
+                <h3 style="margin-top:0; font-family:'Poppins', sans-serif; font-size:20px; margin-bottom: 20px;">Láser</h3>
+                <ul class="menu-list">
+                    </ul>
+            </div>
+            <div id="menu-cricut" style="display:none;">
+                <div class="back-btn" onclick="showSubMenu('main')"><i class="fa-solid fa-arrow-left"></i> Volver</div>
+                <h3 style="margin-top:0; font-family:'Poppins', sans-serif; font-size:20px; margin-bottom: 20px;">Cricut</h3>
+                <ul class="menu-list">
+                    </ul>
+            </div>
+            <div id="menu-3d" style="display:none;">
+                <div class="back-btn" onclick="showSubMenu('main')"><i class="fa-solid fa-arrow-left"></i> Volver</div>
+                <h3 style="margin-top:0; font-family:'Poppins', sans-serif; font-size:20px; margin-bottom: 20px;">Impresión 3D</h3>
+                <ul class="menu-list">
+                    </ul>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <div id="view-pos" class="tab-view active">
+            <div class="card">
+                <div class="pos-header-bar">
+                </div>
+
+                <div style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 15px; margin-bottom: 15px;">
+                    <label style="display:block; font-size:12px; font-weight:600; color:var(--samsung-secondary); margin-bottom:6px;">SELECCIONAR O CREAR PEDIDO</label>
+                    <select id="pos_selectorTickets" onchange="pos_cambiarTicket(this.value)" style="margin-bottom: 12px; font-weight: 600;"></select>
+                    <button class="pos-btn pos-btn-new" onclick="pos_crearNuevoTicket()"><i class="fa-solid fa-circle-plus"></i> Nuevo Pedido</button>
+                </div>
+
+<div class="input-group">
+                    <label>NOMBRE DEL CLIENTE</label>
+                    <input type="text" id="pos_nombreCliente" placeholder="Ej. Juan Pérez" oninput="pos_actualizarDatos()">
+                </div>
+                
+                <label style="display:block; font-size:13px; font-weight:600; color:var(--samsung-secondary); margin-bottom:10px; margin-left:4px;">PRODUCTOS / SERVICIOS</label>
+                <div id="pos_listaProductos"></div>
+                <button class="pos-btn pos-btn-add" onclick="pos_agregarFila()"><i class="fa-solid fa-plus"></i> Agregar Producto</button>
+                
+                <div class="pos-pago-section">
+                    <label style="display:block; font-size:12px; font-weight:600; color:var(--samsung-secondary); margin-bottom:8px;">ANTICIPO ($)</label>
+                    <input type="number" id="pos_anticipo" placeholder="0.00" oninput="pos_actualizarDatos()" style="background: rgba(255,255,255,0.8);" inputmode="decimal">
+                    <label class="pos-checkbox-label">
+                        <input type="checkbox" id="pos_esPagado" onchange="pos_actualizarDatos()">
+                        ¿Ticket Pagado?
+                    </label>
+                    <label class="pos-checkbox-label">
+                        <input type="checkbox" id="pos_esCotizacion" onchange="pos_actualizarDatos()" style="accent-color: var(--samsung-blue);">
+                        ¿Es cotización?
+                    </label>
+                </div>
+
+                <button class="pos-btn pos-btn-view" onclick="pos_previsualizarTicket(false, false)"><i class="fa-solid fa-receipt"></i> Generar Ticket</button>
+                <button class="pos-btn pos-btn-share-img" onpointerdown="pos_prepararImagenCompartir()" onclick="pos_compartirImagen()"><i class="fa-solid fa-share-nodes"></i> Compartir Ticket (Imagen)</button>
+                <button class="pos-btn pos-btn-delete" onclick="pos_eliminarTicket()"><i class="fa-solid fa-trash-can"></i> Borrar Pedido</button>
+            </div>
+
+            <div id="pos_ticket_wrapper">
+                <div id="pos_ticket">
+                    <div id="pos_selloPagado" class="pos-stamp">PAGADO</div>
+                    <div id="pos_selloCotizacion" class="pos-stamp" style="border-color:#0A84FF;color:#0A84FF;top:34%;font-size:1.55em;transform:translate(-50%, -50%) rotate(-12deg);">COTIZACIÓN</div>
+                    
+                    <div style="text-align: center; margin-bottom: 10px;">
+                        <img id="pos_resLogo" style="display:none; max-height: 80px; max-width: 100%; margin: 0 auto;">
+                    </div>
+
+                    <div class="pos-ticket-header" id="pos_resTienda"></div>
+                    <div id="pos_resDireccion" style="font-size: 0.8em; text-align: center;"></div>
+                    <div id="pos_resTelefono" style="font-size: 0.8em; text-align: center;"></div>
+                    <div class="pos-linea"></div>
+                    <div id="pos_resItems"></div>
+                    <div class="pos-linea"></div>
+                    <div>
+                        <div id="pos_resTotal" style="text-align: right; margin-bottom: 5px; font-weight:bold;"></div>
+                        <div id="pos_resAnticipo" style="text-align: right; margin-bottom: 5px;"></div>
+                        <div class="pos-total-final" id="pos_resSaldo"></div>
+                    </div>
+                    <div id="pos_mensajeGracias" style="text-align: center; margin-top: 18px; font-weight: bold; font-size: 0.9em;">¡GRACIAS POR SU COMPRA!</div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="view-pedidos" class="tab-view">
+            <div class="card" style="padding:18px;">
+                <div class="pedidos-summary">
+                    <div class="pedidos-summary-item"><strong id="pedidos-count-pendiente">0</strong><span>Pendientes</span></div>
+                    <div class="pedidos-summary-item"><strong id="pedidos-count-proceso">0</strong><span>En proceso</span></div>
+                    <div class="pedidos-summary-item"><strong id="pedidos-count-listo">0</strong><span>Listos</span></div>
+                </div>
+                <div class="pedidos-search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="pedidos-search-input" placeholder="Buscar cliente o producto…" oninput="pedidos_render()"></div>
+                <div id="pedidos-list"></div>
+            </div>
+            <details class="card pedidos-history" id="pedidos-history"><summary>Historial de entregados <i class="fa-solid fa-chevron-down"></i></summary><div id="pedidos-history-list" class="pedidos-history-body"></div></details>
+        </div>
+        <div id="view-calc" class="tab-view">
+            <div class="card">
+                <h3 style="margin-top:0; font-family:'Poppins', sans-serif; font-size:20px; margin-bottom:20px;">¿Qué deseas calcular? </h3>
+                <ul class="menu-list calc-inline-menu" id="inline-machine-list"></ul>
+            </div>
+        </div>
+
+        <div id="view-calc-category" class="tab-view">
+            <div class="card">
+                <div class="back-btn" onclick="switchTab('calc')"><i class="fa-solid fa-arrow-left"></i> Volver</div>
+                <h3 id="inline-calc-title" style="margin-top:0; font-family:'Poppins', sans-serif; font-size:20px; margin-bottom:20px;"></h3>
+                <ul class="menu-list calc-inline-menu" id="inline-calc-list"></ul>
+            </div>
+        </div>
+
+
+        <div id="calculators-container">
+            </div>
+
+    </main>
+
+
+    <div id="pedido-detail-overlay" onclick="pedidos_cerrarDetalle(event)">
+        <div id="pedido-detail-sheet" onclick="event.stopPropagation()">
+            <div class="pedido-detail-head"><h3>Detalle del pedido</h3><button class="pedido-detail-close" onclick="pedidos_cerrarDetalle()"><i class="fa-solid fa-xmark"></i></button></div>
+            <div class="pedido-detail-info">
+                <div class="pedido-detail-row"><span>Cliente</span><strong id="pedido-det-cliente"></strong></div>
+                <div class="pedido-detail-row"><span>Total</span><strong id="pedido-det-total"></strong></div>
+                <div class="pedido-detail-row"><span>Anticipo</span><strong id="pedido-det-anticipo"></strong></div>
+                <div class="pedido-detail-row"><span>Saldo</span><strong id="pedido-det-saldo"></strong></div>
+                <div class="pedido-detail-products" id="pedido-det-productos"></div>
+            </div>
+            <div class="input-group"><label>FECHA DEL PEDIDO</label><input type="date" id="pedido-det-fechaPedido" onchange="pedidos_guardarDetalle()"></div>
+            <div class="input-group"><label>FECHA DE ENTREGA</label><input type="date" id="pedido-det-fechaEntrega" onchange="pedidos_guardarDetalle()"></div>
+            <div class="input-group"><label>ESTADO</label><select id="pedido-det-estado" onchange="pedidos_guardarDetalle()"><option value="pendiente">Pendiente</option><option value="proceso">En proceso</option><option value="listo">Listo</option><option value="entregado">Entregado</option></select></div>
+            <div class="input-group"><label>NOTAS</label><textarea id="pedido-det-notas" placeholder="Notas del pedido…" oninput="pedidos_guardarDetalle()"></textarea></div>
+            <button class="pos-btn pos-btn-view" onclick="pedidos_abrirEnTicket()"><i class="fa-solid fa-receipt"></i> Abrir en Ticket</button>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="nav-slider" aria-hidden="true"></div>
+        <button class="nav-item active" id="nav-pos" onclick="navTap('pos','nav-pos')">
+            <i class="fa-solid fa-cash-register"></i><span>Ticket</span>
+        </button>
+        <button class="nav-item" id="nav-pedidos" onclick="navTap('pedidos','nav-pedidos')">
+            <i class="fa-solid fa-clipboard-list"></i><span>Pedidos</span>
+        </button>
+        <button class="nav-item" id="nav-calc" onclick="navTap('calc','nav-calc')">
+            <i class="fa-solid fa-calculator"></i><span>Calculadora</span>
+        </button>
+    </nav>
+
+    <script>
+        // =========================================
+        // MATERIALES DINÁMICOS Y CONFIGURACIÓN
+        // =========================================
+        let dyn_materials = {};
+        let dyn_machines = [];
+
+        function escapeHTML(str) {
+            return (str || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function machineLabel(cat) {
+            const machine = dyn_machines.find(m => m.id === cat);
+            return machine ? machine.name : cat;
+        }
+
+        function machineType(cat) {
+            const machine = dyn_machines.find(m => m.id === cat);
+            return machine ? (machine.type || 'area') : (cat === '3d' ? '3d' : 'area');
+        }
+
+        function loadMaterials() {
+            const stored = localStorage.getItem('dyn_materials');
+            if (stored) {
+                try { dyn_materials = JSON.parse(stored) || {}; } catch(e) { dyn_materials = {}; }
+            }
+
+            if (!stored || !Object.keys(dyn_materials).length) {
+                dyn_materials = {
+                    laser: [
+                        { id: 'madera', name: 'Madera de Balsa' },
+                        { id: 'caobilla', name: 'Madera de Caobilla' }
+                    ],
+                    cricut: [
+                        { id: 'economy', name: 'Economy' },
+                        { id: 'smart', name: 'Smart' },
+                        { id: 'textil', name: 'Textil' }
+                    ],
+                    '3d': [
+                        { id: 'pla', name: 'PLA' },
+                        { id: 'petg', name: 'PETG' },
+                        { id: 'tpu', name: 'TPU' }
+                    ]
+                };
+                localStorage.setItem('dyn_materials', JSON.stringify(dyn_materials));
+            }
+
+            const savedMachines = localStorage.getItem('dyn_machines');
+            if (savedMachines) {
+                try { dyn_machines = JSON.parse(savedMachines) || []; } catch(e) { dyn_machines = []; }
+            }
+
+            // Migración automática: conserva las categorías/materiales existentes.
+            if (!dyn_machines.length) {
+                const defaults = {
+                    laser: { id:'laser', name:'Láser', type:'area' },
+                    cricut: { id:'cricut', name:'Cricut', type:'area' },
+                    '3d': { id:'3d', name:'3D', type:'3d' }
+                };
+                dyn_machines = Object.keys(dyn_materials).map(cat =>
+                    defaults[cat] || { id:cat, name:cat, type:'area' }
+                );
+                localStorage.setItem('dyn_machines', JSON.stringify(dyn_machines));
+            }
+
+            // Si existe una categoría antigua que aún no esté registrada, la incorporamos.
+            Object.keys(dyn_materials).forEach(cat => {
+                if (!dyn_machines.some(m => m.id === cat)) {
+                    dyn_machines.push({ id:cat, name:cat, type:(cat === '3d' ? '3d' : 'area') });
+                }
+            });
+
+            dyn_machines.forEach(machine => {
+                if (!Array.isArray(dyn_materials[machine.id])) dyn_materials[machine.id] = [];
+            });
+
+            localStorage.setItem('dyn_machines', JSON.stringify(dyn_machines));
+            localStorage.setItem('dyn_materials', JSON.stringify(dyn_materials));
+        }
+
+        function refreshDynamicUI() {
+            renderSettingsMaterials();
+            renderMenus();
+            renderCalculators();
+            renderInlineMachines();
+        }
+
+        function renderSettingsMaterials() {
+            const container = document.getElementById('cfg-machines-list');
+            if (!container) return;
+
+            container.innerHTML = dyn_machines.map(machine => {
+                const cat = machine.id;
+                const unit = machine.type === '3d' ? '$ / gramo' : '$ / cm²';
+                const mats = (dyn_materials[cat] || []).map(mat => {
+                    const price = localStorage.getItem('p-' + mat.id) || '';
+                    return `
+                        <div class="pos-prod-row" style="margin-bottom:8px;background:rgba(255,255,255,0.6);padding:8px;border-radius:20px;border:1px solid rgba(255,255,255,0.8);">
+                            <input type="text" value="${escapeHTML(mat.name)}" onchange="updateMaterialName('${cat}','${mat.id}',this.value)" style="flex:1;min-width:120px;font-size:14px;padding:12px;background:rgba(255,255,255,0.8);" placeholder="Nombre">
+                            <input type="number" value="${price}" step="0.0001" onchange="updateMaterialPrice('${mat.id}',this.value)" style="width:90px;font-size:14px;padding:12px;background:rgba(255,255,255,0.8);" placeholder="$ Precio">
+                            <button class="pos-btn-del-row" style="width:44px;height:44px;background:transparent;color:var(--samsung-danger);" onclick="deleteMaterial('${cat}','${mat.id}')"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>`;
+                }).join('');
+
+                return `
+                    <div class="dynamic-machine-card" style="margin-bottom:24px;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                            <input type="text" value="${escapeHTML(machine.name)}" onchange="renameMachine('${cat}',this.value)" style="flex:1;font-size:13px;font-weight:700;color:var(--samsung-blue);padding:12px 14px;text-transform:none;" aria-label="Nombre de máquina">
+                            <button class="pos-btn-del-row" style="width:44px;height:44px;background:transparent;color:var(--samsung-danger);" onclick="deleteMachine('${cat}')" title="Eliminar máquina"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                        <label style="display:block;font-size:11px;font-weight:600;color:var(--samsung-secondary);margin:0 0 9px 4px;">MATERIALES · ${unit}</label>
+                        ${mats || '<div style="font-size:13px;color:var(--samsung-secondary);padding:8px 4px 12px;">Sin materiales.</div>'}
+                        <button class="pos-btn pos-btn-new" onclick="addMaterial('${cat}')"><i class="fa-solid fa-plus"></i> Agregar Material</button>
+                    </div>`;
+            }).join('');
+        }
+
+        function renderInlineMachines() {
+            const ul = document.getElementById('inline-machine-list');
+            if (!ul) return;
+            ul.innerHTML = dyn_machines.map(machine => {
+                const icon = 'fa-chevron-right';
+                return `<li onclick="showInlineSubMenu('${machine.id}')">${escapeHTML(machine.name)} <i class="fa-solid ${icon}"></i></li>`;
+            }).join('');
+        }
+
+        function renderMenus() {
+            // Conserva compatibilidad con el antiguo menú overlay, aunque la navegación actual es interna.
+            ['laser', 'cricut', '3d'].forEach(cat => {
+                const ul = document.querySelector(`#menu-${cat} .menu-list`);
+                if (!ul) return;
+                ul.innerHTML = '';
+                (dyn_materials[cat] || []).forEach(mat => {
+                    const icon = 'fa-chevron-right';
+                    ul.innerHTML += `<li onclick="openCalculator('${mat.id}')">${escapeHTML(mat.name)} <i class="fa-solid ${icon}"></i></li>`;
+                });
+            });
+        }
+
+        function renameMachine(cat, newName) {
+            const machine = dyn_machines.find(m => m.id === cat);
+            if (!machine || !newName || !newName.trim()) {
+                renderSettingsMaterials();
+                return;
+            }
+            machine.name = newName.trim();
+            localStorage.setItem('dyn_machines', JSON.stringify(dyn_machines));
+            renderInlineMachines();
+            renderSettingsMaterials();
+        }
+
+        function addMachine() {
+            const name = prompt("Nombre de la nueva máquina o categoría (Ej. Router CNC):");
+            if (!name || !name.trim()) return;
+
+            const is3D = confirm("¿Esta máquina calcula por gramos + tiempo como Impresión 3D?\n\nAceptar = gramos + tiempo\nCancelar = área (cm²)");
+            const base = name.trim().toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+                .replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') || 'maquina';
+            let id = base, i = 2;
+            while (dyn_machines.some(m => m.id === id) || Object.prototype.hasOwnProperty.call(dyn_materials,id)) {
+                id = base + '_' + i++;
+            }
+
+            dyn_machines.push({ id, name:name.trim(), type:is3D ? '3d' : 'area' });
+            dyn_materials[id] = [];
+            localStorage.setItem('dyn_machines', JSON.stringify(dyn_machines));
+            localStorage.setItem('dyn_materials', JSON.stringify(dyn_materials));
+            refreshDynamicUI();
+        }
+
+        function deleteMachine(cat) {
+            const machine = dyn_machines.find(m => m.id === cat);
+            if (!machine) return;
+            if (!confirm(`¿Seguro que deseas eliminar "${machine.name}" y sus materiales?`)) return;
+
+            (dyn_materials[cat] || []).forEach(mat => localStorage.removeItem('p-' + mat.id));
+            delete dyn_materials[cat];
+            dyn_machines = dyn_machines.filter(m => m.id !== cat);
+            localStorage.setItem('dyn_machines', JSON.stringify(dyn_machines));
+            localStorage.setItem('dyn_materials', JSON.stringify(dyn_materials));
+            refreshDynamicUI();
+            switchTab('calc');
+        }
+
+        function updateMaterialName(cat, id, newName) {
+            const mat = (dyn_materials[cat] || []).find(m => m.id === id);
+            if (mat) {
+                mat.name = newName;
+                localStorage.setItem('dyn_materials', JSON.stringify(dyn_materials));
+                renderMenus();
+                renderCalculators();
+                renderInlineMachines();
+            }
+        }
+
+        function updateMaterialPrice(id, newPrice) {
+            localStorage.setItem('p-' + id, newPrice);
+        }
+
+        function addMaterial(cat) {
+            const name = prompt("Ingresa el nombre del nuevo material:");
+            if (!name || name.trim() === '') return;
+            
+            let priceStr = prompt("Ingresa el precio " + (machineType(cat) === '3d' ? 'por gramo' : 'por cm²') + " ($):");
+            if (priceStr === null) return;
+            
+            let price = parseFloat(priceStr.replace(',', '.'));
+            if (isNaN(price)) price = 0;
+
+            const id = cat + '_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+            dyn_materials[cat].push({ id, name: name.trim() });
+            localStorage.setItem('dyn_materials', JSON.stringify(dyn_materials));
+            localStorage.setItem('p-' + id, price);
+
+            refreshDynamicUI();
+        }
+
+        function deleteMaterial(cat, id) {
+            if (confirm("¿Seguro que deseas eliminar este material?")) {
+                dyn_materials[cat] = dyn_materials[cat].filter(m => m.id !== id);
+                localStorage.setItem('dyn_materials', JSON.stringify(dyn_materials));
+                refreshDynamicUI();
+                
+                const currentTab = document.querySelector('.tab-view.active');
+                if (currentTab && currentTab.id === 'view-' + id) {
+                    switchTab('pos');
+                }
+            }
+        }
+
+        function renderMenus() {
+            ['laser', 'cricut', '3d'].forEach(cat => {
+                const ul = document.querySelector(`#menu-${cat} .menu-list`);
+                ul.innerHTML = '';
+                dyn_materials[cat].forEach(mat => {
+                    let icon = cat === '3d' ? 'fa-cube' : 'fa-calculator';
+                    ul.innerHTML += `<li onclick="openCalculator('${mat.id}')">${escapeHTML(mat.name)} <i class="fa-solid ${icon}"></i></li>`;
+                });
+            });
+        }
+
+        function renderCalculators() {
+            const container = document.getElementById('calculators-container');
+            const activeTab = document.querySelector('.tab-view.active');
+            const activeTabId = activeTab ? activeTab.id : null;
+            let html = '';
+
+            dyn_machines.forEach(machine => {
+                const cat = machine.id;
+                (dyn_materials[cat] || []).forEach(mat => {
+                    const t = mat.id;
+
+                    if (machine.type === '3d') {
+                        html += `
+                            <div id="view-${t}" class="tab-view">
+                                <div class="card">
+                                    <div class="input-group"><label>PESO DE FILAMENTO (GRAMOS)</label><input type="number" id="w-${t}" placeholder="0"></div>
+                                    <div class="input-group"><label>TIEMPO DE IMPRESIÓN (MINUTOS)</label><input type="number" id="t-${t}" placeholder="0"></div>
+                                    <button class="btn-calc" onclick="calc3D('${t}')">Calcular</button>
+                                    <div id="res-${t}" class="result-box">
+                                        <div class="res-line" style="font-size:13px;color:var(--samsung-secondary);"><span>Peso: <span id="out-w-${t}">0</span>g | Tiempo: <span id="out-t-${t}">0</span>min</span></div>
+                                        <div class="res-line"><span>Costo Filamento:</span> <span class="val">$<span id="out-cf-${t}">0</span></span></div>
+                                        <div class="res-line"><span>Costo Tiempo:</span> <span class="val">$<span id="out-ct-${t}">0</span></span></div>
+                                        <div class="res-line" style="border-top:1px solid rgba(0,0,0,0.05);padding-top:12px;"><span>Precio Venta:</span> <span class="price-val">$<span id="out-p-${t}">0</span></span></div>
+                                    </div>
+                                </div>
+                            </div>`;
+                    } else {
+                        html += `
+                            <div id="view-${t}" class="tab-view">
+                                <div class="card">
+                                    <div class="input-group"><label>LARGO (CM)</label><input type="number" id="l-${t}" placeholder="0"></div>
+                                    <div class="input-group"><label>ANCHO (CM)</label><input type="number" id="a-${t}" placeholder="0"></div>
+                                    <button class="btn-calc" onclick="calc('${t}')">Calcular</button>
+                                    <div id="res-${t}" class="result-box">
+                                        <div class="res-line"><span>Área:</span> <span class="val"><span id="out-a-${t}">0</span> cm²</span></div>
+                                        <div class="res-line"><span>Costo Material:</span> <span class="val">$<span id="out-c-${t}">0</span></span></div>
+                                        <div class="res-line"><span>Precio Venta:</span> <span class="price-val">$<span id="out-p-${t}">0</span></span></div>
+                                    </div>
+                                </div>
+                            </div>`;
+                    }
+                });
+            });
+
+            container.innerHTML = html;
+
+            if (activeTabId && document.getElementById(activeTabId)) {
+                document.getElementById(activeTabId).classList.add('active');
+            } else if (activeTabId && !['view-pos','view-pedidos','view-calc','view-calc-category'].includes(activeTabId)) {
+                switchTab('pos');
+            }
+        }
+
+        // =========================================
+        // INICIALIZACIÓN Y NAVEGACIÓN
+        // =========================================
+
+        function appInit() {
+            calcInit();
+            pedidos_migrarDatos();
+            pos_Init();
+        }
+
+        const CREATICICKET_STORAGE_KEYS = [
+                'dyn_machines',
+                'dyn_materials',
+                'multiplier',
+                'p-time3d',
+                'pos_direccionTienda',
+                'pos_idActual',
+                'pos_logoTienda',
+                'pos_nombreTienda',
+                'pos_pedidos',
+                'pos_telefonoTienda'
+        ];
+
+        function crearCopiaSeguridad() {
+            try {
+                const datos = {};
+
+                CREATICICKET_STORAGE_KEYS.forEach(clave => {
+                    const valor = localStorage.getItem(clave);
+                    if (valor !== null) datos[clave] = valor;
+                });
+
+                const copia = {
+                    app: 'CreaTicket',
+                    version: '1.1',
+                    createdAt: new Date().toISOString(),
+                    storageKeys: CREATICICKET_STORAGE_KEYS,
+                    localStorage: datos
+                };
+
+                const blob = new Blob([JSON.stringify(copia, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const fecha = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                const nombre = `CreaTicket-Backup-${fecha.getFullYear()}-${pad(fecha.getMonth()+1)}-${pad(fecha.getDate())}_${pad(fecha.getHours())}-${pad(fecha.getMinutes())}.json`;
+
+                const enlace = document.createElement('a');
+                enlace.href = url;
+                enlace.download = nombre;
+                document.body.appendChild(enlace);
+                enlace.click();
+                enlace.remove();
+
+                setTimeout(() => URL.revokeObjectURL(url), 1500);
+            } catch (error) {
+                alert('No se pudo crear la copia de seguridad.');
+                console.error(error);
+            }
+        }
+
+        function restaurarCopiaSeguridad(event) {
+            const input = event.target;
+            const archivo = input.files && input.files[0];
+            if (!archivo) return;
+
+            const lector = new FileReader();
+
+            lector.onload = function(e) {
+                try {
+                    const copia = JSON.parse(e.target.result);
+
+                    if (!copia || copia.app !== 'CreaTicket' || !copia.localStorage || typeof copia.localStorage !== 'object' || Array.isArray(copia.localStorage)) {
+                        throw new Error('Archivo de copia no válido');
+                    }
+
+                    const claves = Object.keys(copia.localStorage);
+                    if (!claves.length) {
+                        throw new Error('La copia está vacía');
+                    }
+
+                    const fechaCopia = copia.createdAt
+                        ? new Date(copia.createdAt).toLocaleString()
+                        : 'fecha desconocida';
+
+                    const confirmar = confirm(
+                        `Se restaurará la copia de seguridad (${fechaCopia}).\n\n` +
+                        'Los datos actuales de CreaTicket en este dispositivo serán reemplazados.\n\n' +
+                        '¿Deseas continuar?'
+                    );
+
+                    if (!confirmar) {
+                        input.value = '';
+                        return;
+                    }
+
+                    // Elimina únicamente los datos propios de CreaTicket.
+                    CREATICICKET_STORAGE_KEYS.forEach(clave => localStorage.removeItem(clave));
+
+                    // Restaura únicamente claves reconocidas por CreaTicket.
+                    CREATICICKET_STORAGE_KEYS.forEach(clave => {
+                        const valor = copia.localStorage[clave];
+                        if (typeof valor === 'string') {
+                            localStorage.setItem(clave, valor);
+                        }
+                    });
+
+                    alert('Copia restaurada correctamente. CreaTicket se recargará ahora.');
+                    location.reload();
+                } catch (error) {
+                    alert('El archivo seleccionado no es una copia de seguridad válida de CreaTicket.');
+                    console.error(error);
+                    input.value = '';
+                }
+            };
+
+            lector.onerror = function() {
+                alert('No se pudo leer el archivo seleccionado.');
+                input.value = '';
+            };
+
+            lector.readAsText(archivo);
+        }
+
+        function toggleSettingsFold(id, button) {
+            const body = document.getElementById(id);
+            if (!body) return;
+            const fold = button.closest('.settings-fold');
+            if (!fold) return;
+            fold.classList.toggle('open');
+        }
+
+        function toggleSettings() {
+            const el = document.getElementById('settings-overlay');
+            el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function navTap(tab, navId) {
+            const nav = document.getElementById(navId);
+            if (nav && nav.classList.contains('active')) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+            switchTab(tab);
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            const targetView = document.getElementById('view-' + tab);
+            if(targetView) targetView.classList.add('active');
+            
+            if(tab === 'pos') {
+                document.getElementById('nav-pos').classList.add('active');
+                document.getElementById('header-title').innerText = 'Ticket';
+            } else if(tab === 'pedidos') {
+                document.getElementById('nav-pedidos').classList.add('active');
+                document.getElementById('header-title').innerText = 'Pedidos';
+                pedidos_render();
+            } else {
+                document.getElementById('nav-calc').classList.add('active');
+                
+                if(tab === 'calc') {
+                    document.getElementById('header-title').innerText = 'Calculadora';
+                    if (typeof liquidGlassSyncToActive === 'function') liquidGlassSyncToActive();
+                    return;
+                }
+
+                let matName = tab.toUpperCase(); 
+                dyn_machines.forEach(machine => {
+                    const found = (dyn_materials[machine.id] || []).find(m => m.id === tab);
+                    if(found) matName = found.name;
+                });
+                document.getElementById('header-title').innerText = matName;
+            }
+        }
+
+        function showInlineSubMenu(category) {
+            const machine = dyn_machines.find(m => m.id === category);
+            const list = document.getElementById('inline-calc-list');
+            const title = document.getElementById('inline-calc-title');
+            if (!machine || !list || !title || !dyn_materials[category]) return;
+
+            title.innerText = machine.name;
+            list.innerHTML = dyn_materials[category].length
+                ? dyn_materials[category].map(mat => {
+                    const icon = 'fa-chevron-right';
+                    return `<li onclick="openInlineCalculator('${mat.id}')">${escapeHTML(mat.name)} <i class="fa-solid ${icon}"></i></li>`;
+                }).join('')
+                : `<li onclick="toggleSettings()" style="justify-content:center;color:var(--samsung-blue);">Agregar materiales en Configuración <i class="fa-solid fa-gear"></i></li>`;
+
+            document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-calc-category').classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('nav-calc').classList.add('active');
+            document.getElementById('header-title').innerText = machine.name;
+            if (typeof liquidGlassSyncToActive === 'function') liquidGlassSyncToActive();
+        }
+
+        function openInlineCalculator(type) {
+            switchTab(type);
+        }
+
+        function showCalcMenu() {
+            const overlay = document.getElementById('calc-menu-overlay');
+            const sheet = document.getElementById('calc-bottom-sheet');
+            overlay.style.display = 'flex';
+            showSubMenu('main'); 
+            setTimeout(() => { sheet.classList.add('open'); }, 10);
+        }
+
+        function closeCalcMenu(e) {
+            if(e && e.target !== document.getElementById('calc-menu-overlay')) return;
+            const sheet = document.getElementById('calc-bottom-sheet');
+            sheet.classList.remove('open');
+            setTimeout(() => { document.getElementById('calc-menu-overlay').style.display = 'none'; }, 300);
+        }
+
+        function showSubMenu(menuId) {
+            document.getElementById('menu-main').style.display = 'none';
+            document.getElementById('menu-laser').style.display = 'none';
+            document.getElementById('menu-cricut').style.display = 'none';
+            document.getElementById('menu-3d').style.display = 'none';
+            document.getElementById('menu-' + menuId).style.display = 'block';
+        }
+
+        function openCalculator(type) {
+            document.getElementById('calc-bottom-sheet').classList.remove('open');
+            document.getElementById('calc-menu-overlay').style.display = 'none';
+            switchTab(type);
+        }
+
+        function saveConfig() {
+            localStorage.setItem('p-time3d', document.getElementById('price-time3d').value);
+            localStorage.setItem('multiplier', document.getElementById('multiplier').value);
+        }
+
+        function calcInit() {
+            loadMaterials();
+            refreshDynamicUI();
+            
+            const pTime = localStorage.getItem('p-time3d');
+            if(pTime) document.getElementById('price-time3d').value = pTime;
+            
+            const m = localStorage.getItem('multiplier') || 3;
+            document.getElementById('multiplier').value = m;
+        }
+
+        function calc(type) {
+            const l = parseFloat(document.getElementById('l-' + type).value) || 0;
+            const a = parseFloat(document.getElementById('a-' + type).value) || 0;
+            const c = parseFloat(localStorage.getItem('p-' + type)) || 0;
+            const mult = parseFloat(localStorage.getItem('multiplier')) || 3;
+
+            if (c === 0) { alert("¡Primero configura el precio en ajustes!"); return; }
+            if (l > 0 && a > 0) {
+                const area = l * a;
+                const cost = area * c;
+                document.getElementById('out-a-' + type).innerText = area.toLocaleString();
+                document.getElementById('out-c-' + type).innerText = cost.toFixed(2);
+                document.getElementById('out-p-' + type).innerText = (cost * mult).toFixed(2);
+                document.getElementById('res-' + type).style.display = 'block';
+            } else {
+                alert("Ingresa medidas válidas.");
+            }
+        }
+
+        function calc3D(type) {
+            const w = parseFloat(document.getElementById('w-' + type).value) || 0;
+            const t = parseFloat(document.getElementById('t-' + type).value) || 0;
+            const pricePerG = parseFloat(localStorage.getItem('p-' + type)) || 0;
+            const pricePerMin = parseFloat(localStorage.getItem('p-time3d')) || 0;
+
+            if (pricePerG === 0 || pricePerMin === 0) { 
+                alert("¡Primero configura los precios de filamento y tiempo 3D en ajustes!"); 
+                return; 
+            }
+            
+            if (w > 0 || t > 0) {
+                const costFilament = w * pricePerG;
+                const costTime = t * pricePerMin;
+                const salePrice = costFilament + costTime; 
+                
+                document.getElementById('out-w-' + type).innerText = w.toLocaleString();
+                document.getElementById('out-t-' + type).innerText = t.toLocaleString();
+                document.getElementById('out-cf-' + type).innerText = costFilament.toFixed(2);
+                document.getElementById('out-ct-' + type).innerText = costTime.toFixed(2);
+                document.getElementById('out-p-' + type).innerText = salePrice.toFixed(2);
+                document.getElementById('res-' + type).style.display = 'block';
+            } else {
+                alert("Ingresa peso o tiempo válido.");
+            }
+        }
+
+
+        // =========================================
+        // PEDIDOS - AGENDA / ORGANIZADOR
+        // =========================================
+        let pedidos_idDetalle = null;
+
+        function pedidos_fechaHoy() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+        function pedidos_fechaDesdeId(id) {
+            const d = new Date(Number(id));
+            if (isNaN(d.getTime()) || d.getFullYear()<2000 || d.getFullYear()>2100) return pedidos_fechaHoy();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+        function pedidos_migrarDatos() {
+            let changed=false;
+            pos_pedidos.forEach(p=>{
+                if(!Object.prototype.hasOwnProperty.call(p,'fechaPedido')){p.fechaPedido=pedidos_fechaDesdeId(p.id);changed=true}
+                if(!Object.prototype.hasOwnProperty.call(p,'fechaEntrega')){p.fechaEntrega='';changed=true}
+                if(!Object.prototype.hasOwnProperty.call(p,'estadoPedido')){p.estadoPedido='pendiente';changed=true}
+                if(!Object.prototype.hasOwnProperty.call(p,'notas')){p.notas='';changed=true}
+                if(!['pendiente','proceso','listo','entregado'].includes(p.estadoPedido)){p.estadoPedido='pendiente';changed=true}
+            });
+            localStorage.setItem('pos_pedidos',JSON.stringify(pos_pedidos));
+        }
+        function pedidos_calcularTotal(p){
+            let total=0;(p.productos||[]).forEach(prod=>{if(prod.name){const q=parseFloat(prod.qty||0),pr=parseFloat(prod.price||0);total+=(prod.mode==='total')?pr:(q*pr)}});return total;
+        }
+        function pedidos_moneda(n){return '$'+(Number(n)||0).toFixed(2)}
+        function pedidos_parseFecha(f){if(!f)return null;const a=f.split('-').map(Number);return a.length===3?new Date(a[0],a[1]-1,a[2]):null}
+        function pedidos_formatearFecha(f){const d=pedidos_parseFecha(f);return d?d.toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'}):'Sin fecha de entrega'}
+        function pedidos_clasificar(p){
+            if(!p.fechaEntrega)return 'sinfecha';const e=pedidos_parseFecha(p.fechaEntrega);if(!e)return 'sinfecha';e.setHours(0,0,0,0);
+            const h=new Date();h.setHours(0,0,0,0);const m=new Date(h);m.setDate(h.getDate()+1);
+            if(e<h)return 'atrasados';if(e.getTime()===h.getTime())return 'hoy';if(e.getTime()===m.getTime())return 'manana';
+            const fin=new Date(h),dia=h.getDay();fin.setDate(h.getDate()+(dia===0?0:7-dia));fin.setHours(23,59,59,999);
+            return (e>m&&e<=fin)?'semana':'proximos';
+        }
+        function pedidos_resumenProductos(p){const n=(p.productos||[]).filter(x=>x.name).map(x=>x.name);return n.length?n.join(' · '):'Sin productos'}
+        function pedidos_selectEstado(p){const e=p.estadoPedido||'pendiente';return `<select class="pedido-status ${e}" onchange="pedidos_cambiarEstado(${p.id},this.value,event)" onclick="event.stopPropagation()"><option value="pendiente" ${e==='pendiente'?'selected':''}>Pendiente</option><option value="proceso" ${e==='proceso'?'selected':''}>En proceso</option><option value="listo" ${e==='listo'?'selected':''}>Listo</option><option value="entregado" ${e==='entregado'?'selected':''}>Entregado</option></select>`}
+        function pedidos_tarjeta(p){
+            const total=pedidos_calcularTotal(p),ant=parseFloat(p.anticipo||0),saldo=p.pagado?0:Math.max(0,total-ant);
+            return `<div class="card pedido-card" onclick="pedidos_abrirDetalle(${p.id})"><div class="pedido-card-top"><div style="min-width:0;flex:1"><div class="pedido-cliente">${escapeHTML(p.nombre||'Sin Nombre')}</div><div class="pedido-fecha">${escapeHTML(pedidos_formatearFecha(p.fechaEntrega))}</div></div>${pedidos_selectEstado(p)}</div><div class="pedido-productos">${escapeHTML(pedidos_resumenProductos(p))}</div><div class="pedido-money-grid"><div><span>Total</span><strong>${pedidos_moneda(total)}</strong></div><div><span>Anticipo</span><strong>${pedidos_moneda(ant)}</strong></div><div><span>Saldo</span><strong>${pedidos_moneda(saldo)}</strong></div></div></div>`;
+        }
+        function pedidos_render(){
+            pedidos_migrarDatos();const qel=document.getElementById('pedidos-search-input'),q=qel?qel.value.trim().toLowerCase():'';
+            const act=pos_pedidos.filter(p=>p.estadoPedido!=='entregado');
+            document.getElementById('pedidos-count-pendiente').innerText=act.filter(p=>p.estadoPedido==='pendiente').length;
+            document.getElementById('pedidos-count-proceso').innerText=act.filter(p=>p.estadoPedido==='proceso').length;
+            document.getElementById('pedidos-count-listo').innerText=act.filter(p=>p.estadoPedido==='listo').length;
+            const filtrar=p=>!q||(p.nombre||'').toLowerCase().includes(q)||(p.productos||[]).map(x=>x.name||'').join(' ').toLowerCase().includes(q);
+            const g={atrasados:['🔴 Atrasados',[]],hoy:['🔵 Hoy',[]],manana:['🟠 Mañana',[]],semana:['📅 Esta semana',[]],proximos:['📦 Próximos',[]],sinfecha:['📝 Sin fecha de entrega',[]]};
+            act.filter(filtrar).forEach(p=>g[pedidos_clasificar(p)][1].push(p));
+            Object.values(g).forEach(x=>x[1].sort((a,b)=>(a.fechaEntrega||'9999').localeCompare(b.fechaEntrega||'9999')));
+            let html='';Object.values(g).forEach(x=>{if(x[1].length)html+=`<section class="pedidos-section"><h3 class="pedidos-section-title">${x[0]}</h3>${x[1].map(pedidos_tarjeta).join('')}</section>`});
+            document.getElementById('pedidos-list').innerHTML=html||`<div class="pedidos-empty">${q?'No hay pedidos que coincidan con la búsqueda.':'No hay pedidos activos para mostrar.'}</div>`;
+            const ent=pos_pedidos.filter(p=>p.estadoPedido==='entregado'&&filtrar(p)).sort((a,b)=>(b.fechaEntrega||b.fechaPedido||'').localeCompare(a.fechaEntrega||a.fechaPedido||''));
+            document.getElementById('pedidos-history-list').innerHTML=ent.length?ent.map(pedidos_tarjeta).join(''):'<div class="pedidos-empty">No hay pedidos entregados.</div>';
+        }
+        function pedidos_cambiarEstado(id,estado,event){if(event)event.stopPropagation();const p=pos_pedidos.find(x=>x.id==id);if(!p)return;p.estadoPedido=estado;localStorage.setItem('pos_pedidos',JSON.stringify(pos_pedidos));pos_asegurarTicketActivo();pos_cargarFormulario();pedidos_render();if(pedidos_idDetalle==id)pedidos_llenarDetalle(p)}
+        function pedidos_abrirDetalle(id){const p=pos_pedidos.find(x=>x.id==id);if(!p)return;pedidos_idDetalle=p.id;pedidos_llenarDetalle(p);const o=document.getElementById('pedido-detail-overlay'),s=document.getElementById('pedido-detail-sheet');o.style.display='flex';setTimeout(()=>s.classList.add('open'),10)}
+        function pedidos_llenarDetalle(p){const t=pedidos_calcularTotal(p),a=parseFloat(p.anticipo||0);document.getElementById('pedido-det-cliente').innerText=p.nombre||'Sin Nombre';document.getElementById('pedido-det-total').innerText=pedidos_moneda(t);document.getElementById('pedido-det-anticipo').innerText=pedidos_moneda(a);document.getElementById('pedido-det-saldo').innerText=pedidos_moneda(p.pagado?0:Math.max(0,t-a));document.getElementById('pedido-det-productos').innerText=pedidos_resumenProductos(p);document.getElementById('pedido-det-fechaPedido').value=p.fechaPedido||'';document.getElementById('pedido-det-fechaEntrega').value=p.fechaEntrega||'';document.getElementById('pedido-det-estado').value=p.estadoPedido||'pendiente';document.getElementById('pedido-det-notas').value=p.notas||''}
+        function pedidos_guardarDetalle(){const p=pos_pedidos.find(x=>x.id==pedidos_idDetalle);if(!p)return;p.fechaPedido=document.getElementById('pedido-det-fechaPedido').value||'';p.fechaEntrega=document.getElementById('pedido-det-fechaEntrega').value||'';p.estadoPedido=document.getElementById('pedido-det-estado').value||'pendiente';p.notas=document.getElementById('pedido-det-notas').value||'';localStorage.setItem('pos_pedidos',JSON.stringify(pos_pedidos));pos_asegurarTicketActivo();pos_cargarFormulario();pedidos_render()}
+        function pedidos_cerrarDetalle(event){if(event&&event.target!==document.getElementById('pedido-detail-overlay'))return;const o=document.getElementById('pedido-detail-overlay'),s=document.getElementById('pedido-detail-sheet');s.classList.remove('open');setTimeout(()=>{o.style.display='none';pedidos_idDetalle=null},300)}
+        function pedidos_abrirEnTicket(){const p=pos_pedidos.find(x=>x.id==pedidos_idDetalle);if(!p)return;pos_idActual=p.id;localStorage.setItem('pos_idActual',pos_idActual);pos_renderSelector();pos_cargarFormulario();pedidos_cerrarDetalle();switchTab('pos')}
+
+        // =========================================
+        // PUNTO DE VENTA (POS)
+        // =========================================
+
+        let pos_pedidos = JSON.parse(localStorage.getItem('pos_pedidos')) || [{ id: Date.now(), nombre: 'Nuevo Cliente', productos: [], anticipo: 0, pagado: false, cotizacion: false, fechaPedido: pedidos_fechaHoy(), fechaEntrega: '', estadoPedido: 'pendiente', notas: '' }];
+        
+        let pos_idActual = localStorage.getItem('pos_idActual') ? parseInt(localStorage.getItem('pos_idActual')) : null;
+        if (!pos_idActual || !pos_pedidos.find(x => x.id === pos_idActual)) {
+            pos_idActual = pos_pedidos[0].id;
+            localStorage.setItem('pos_idActual', pos_idActual);
+        }
+
+        function pos_toggleConfig() {
+            const section = document.getElementById('pos_configSection');
+            section.style.display = (section.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function pos_Init() {
+            pos_asegurarTicketActivo();
+            document.getElementById('pos_nombreTiendaGlobal').value = localStorage.getItem('pos_nombreTienda') || '';
+            document.getElementById('pos_direccionTienda').value = localStorage.getItem('pos_direccionTienda') || '';
+            document.getElementById('pos_telefonoTienda').value = localStorage.getItem('pos_telefonoTienda') || '';
+            
+            const savedLogo = localStorage.getItem('pos_logoTienda');
+            if (savedLogo) {
+                const preview = document.getElementById('pos_logoPreview');
+                preview.src = savedLogo;
+                preview.style.display = 'inline-block';
+            }
+
+            pos_cargarFormulario();
+        }
+
+        function pos_cargarLogo(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64Image = e.target.result;
+                    localStorage.setItem('pos_logoTienda', base64Image);
+                    
+                    const preview = document.getElementById('pos_logoPreview');
+                    preview.src = base64Image;
+                    preview.style.display = 'inline-block';
+                    
+                    pos_previsualizarTicket(false, true); 
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function pos_guardarTienda() {
+            localStorage.setItem('pos_nombreTienda', document.getElementById('pos_nombreTiendaGlobal').value);
+            localStorage.setItem('pos_direccionTienda', document.getElementById('pos_direccionTienda').value);
+            localStorage.setItem('pos_telefonoTienda', document.getElementById('pos_telefonoTienda').value);
+            pos_previsualizarTicket(false, true); 
+        }
+
+        function pos_asegurarTicketActivo() {
+            const activos = pos_pedidos.filter(p => p.estadoPedido !== 'entregado');
+            const actual = pos_pedidos.find(p => p.id == pos_idActual);
+            if (actual && actual.estadoPedido !== 'entregado') return;
+
+            if (activos.length > 0) {
+                pos_idActual = activos[0].id;
+            } else {
+                const nuevo = { id: Date.now(), nombre: 'Nuevo Cliente', productos: [], anticipo: 0, pagado: false, cotizacion: false, fechaPedido: pedidos_fechaHoy(), fechaEntrega: '', estadoPedido: 'pendiente', notas: '' };
+                pos_pedidos.push(nuevo);
+                pos_idActual = nuevo.id;
+                localStorage.setItem('pos_pedidos', JSON.stringify(pos_pedidos));
+            }
+            localStorage.setItem('pos_idActual', pos_idActual);
+        }
+
+        function pos_renderSelector() {
+            const sel = document.getElementById('pos_selectorTickets');
+            const activos = pos_pedidos.filter(p => p.estadoPedido !== 'entregado');
+            sel.innerHTML = activos.map(p => `<option value="${p.id}" ${p.id == pos_idActual ? 'selected' : ''}>${p.nombre || 'Sin Nombre'}</option>`).join('');
+        }
+
+        function pos_cargarFormulario() {
+            const p = pos_pedidos.find(x => x.id == pos_idActual);
+            if(!p) return;
+            document.getElementById('pos_nombreCliente').value = p.nombre || '';
+            document.getElementById('pos_anticipo').value = p.anticipo || '';
+            document.getElementById('pos_esPagado').checked = !!p.pagado;
+            document.getElementById('pos_esCotizacion').checked = !!p.cotizacion;
+            
+            document.getElementById('pos_listaProductos').innerHTML = '';
+            if(p.productos && p.productos.length > 0) {
+                p.productos.forEach(prod => pos_agregarFila(prod.qty, prod.name, prod.price, prod.mode || 'unit'));
+            } else {
+                pos_agregarFila();
+            }
+            pos_renderSelector();
+            pos_previsualizarTicket(false, true); 
+        }
+
+        function pos_actualizarDatos() {
+            const p = pos_pedidos.find(x => x.id == pos_idActual);
+            if(!p) return;
+            p.nombre = document.getElementById('pos_nombreCliente').value;
+            p.anticipo = document.getElementById('pos_anticipo').value;
+            p.pagado = document.getElementById('pos_esPagado').checked;
+            p.cotizacion = document.getElementById('pos_esCotizacion').checked;
+            
+            const filas = document.querySelectorAll('#pos_listaProductos .pos-prod-row');
+            p.productos = [];
+            filas.forEach(fila => {
+                const qty = fila.querySelector('.pos-prod-qty').value;
+                const name = fila.querySelector('.pos-prod-name').value;
+                const mode = fila.querySelector('.pos-prod-mode').value;
+                const price = fila.querySelector('.pos-prod-price').value;
+                if(name !== '' || price !== '') {
+                    p.productos.push({ qty, name, price, mode });
+                }
+            });
+            localStorage.setItem('pos_pedidos', JSON.stringify(pos_pedidos));
+            pos_renderSelector();
+            pos_previsualizarTicket(false, true); 
+        }
+
+        function pos_cambiarTicket(id) { 
+            pos_idActual = parseInt(id); 
+            localStorage.setItem('pos_idActual', pos_idActual);
+            pos_cargarFormulario(); 
+        }
+
+        function pos_crearNuevoTicket() {
+            const nuevo = { id: Date.now(), nombre: 'Nuevo Cliente', productos: [], anticipo: 0, pagado: false, cotizacion: false, fechaPedido: pedidos_fechaHoy(), fechaEntrega: '', estadoPedido: 'pendiente', notas: '' };
+            pos_pedidos.push(nuevo);
+            localStorage.setItem('pos_pedidos', JSON.stringify(pos_pedidos));
+            pos_idActual = nuevo.id;
+            localStorage.setItem('pos_idActual', pos_idActual);
+            pos_cargarFormulario();
+        }
+
+        function pos_eliminarTicket() {
+            if(pos_pedidos.length > 1) {
+                if(confirm('¿Eliminar este ticket?')) {
+                    pos_pedidos = pos_pedidos.filter(x => x.id != pos_idActual);
+                    pos_idActual = pos_pedidos[0].id;
+                    localStorage.setItem('pos_pedidos', JSON.stringify(pos_pedidos));
+                    localStorage.setItem('pos_idActual', pos_idActual);
+                    pos_cargarFormulario();
+                }
+            } else { 
+                alert("Debes tener al menos un ticket."); 
+            }
+        }
+
+        function pos_agregarFila(qty = 1, name = '', price = '', mode = 'unit') {
+            const div = document.createElement('div');
+            div.className = 'pos-prod-row';
+            div.style.position = 'relative';
+            div.innerHTML = `
+                <input type="text" class="pos-prod-name" placeholder="Producto o servicio" value="${escapeHTML(name)}" 
+                    oninput="pos_actualizarDatos()" 
+                    style="width: 100%; flex-basis: 100%; margin-bottom: 4px;">
+                
+                <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
+                    <input type="number" class="pos-prod-qty" placeholder="Cant." value="${qty}" oninput="pos_actualizarDatos()" style="width:70px; text-align:center;" inputmode="decimal">
+                    
+                    <select class="pos-prod-mode" onchange="pos_actualizarDatos()" style="flex:1; padding: 14px 5px; border-radius: 16px; font-size: 13px; text-align: center; border: 1px solid rgba(255,255,255,0.8); background: rgba(255,255,255,0.7); outline: none; color: var(--samsung-text); font-weight: 500;">
+                        <option value="unit" ${mode === 'unit' ? 'selected' : ''}>C/U</option>
+                        <option value="total" ${mode === 'total' ? 'selected' : ''}>Total</option>
+                    </select>
+
+                    <input type="number" class="pos-prod-price" placeholder="$ Precio" value="${price}" oninput="pos_actualizarDatos()" style="width:90px;" inputmode="decimal">
+                    
+                    <button class="pos-btn-del-row" onclick="this.closest('.pos-prod-row').remove(); pos_actualizarDatos();" title="Borrar producto"><i class="fa-solid fa-xmark"></i></button>
+                </div>`;
+            document.getElementById('pos_listaProductos').appendChild(div);
+        }
+
+        function pos_previsualizarTicket(isWhatsapp = false, silent = false) {
+            const p = pos_pedidos.find(x => x.id == pos_idActual);
+            if(!p) return;
+            const tienda = document.getElementById('pos_nombreTiendaGlobal').value || "Mi Tienda";
+            const dir = document.getElementById('pos_direccionTienda').value || "";
+            const tel = document.getElementById('pos_telefonoTienda').value || "";
+            let total = 0;
+            
+            p.productos.forEach(prod => { 
+                if(prod.name) {
+                    const qtyVal = parseFloat(prod.qty || 0);
+                    const priceVal = parseFloat(prod.price || 0);
+                    total += (prod.mode === 'total') ? priceVal : (qtyVal * priceVal);
+                }
+            });
+            
+            if(isWhatsapp) {
+                let msg = `*${tienda.toUpperCase()}*\n${dir}\nTel: ${tel}\n\n${p.cotizacion ? '*COTIZACIÓN*\n' : ''}*Cliente:* ${p.nombre}\n-------------------\n`;
+                p.productos.forEach(prod => { 
+                    if(prod.name) {
+                        const qVal = parseFloat(prod.qty || 0);
+                        const pVal = parseFloat(prod.price || 0);
+                        const isTotal = prod.mode === 'total';
+                        
+                        const subtotal = isTotal ? pVal : (qVal * pVal);
+                        const precioUnitario = isTotal ? (pVal / (qVal || 1)) : pVal;
+                        
+                        const desc = isTotal ? '' : `($${precioUnitario.toFixed(2)} c/u)`;
+                        msg += `${prod.qty}x ${prod.name} ${desc} - $${subtotal.toFixed(2)}\n`; 
+                    }
+                });
+                msg += `-------------------\nTotal: $${total.toFixed(2)}\n`;
+                if (!p.cotizacion) {
+                    msg += `Anticipo: -$${parseFloat(p.anticipo || 0).toFixed(2)}\n`;
+                    msg += p.pagado ? `*ESTADO: PAGADO*` : `*SALDO PENDIENTE: $${(total - (p.anticipo || 0)).toFixed(2)}*`;
+                }
+                return msg;
+            } else {
+                const savedLogo = localStorage.getItem('pos_logoTienda');
+                const logoEl = document.getElementById('pos_resLogo');
+                if (savedLogo) {
+                    logoEl.src = savedLogo;
+                    logoEl.style.display = 'block';
+                } else {
+                    logoEl.style.display = 'none';
+                }
+
+                document.getElementById('pos_resTienda').innerText = tienda;
+                document.getElementById('pos_resDireccion').innerText = dir;
+                document.getElementById('pos_resTelefono').innerText = tel;
+                let htmlItems = '';
+                p.productos.forEach(prod => {
+                    if(prod.name) {
+                        const qVal = parseFloat(prod.qty || 0);
+                        const pVal = parseFloat(prod.price || 0);
+                        const isTotal = prod.mode === 'total';
+                        
+                        const subtotal = isTotal ? pVal : (qVal * pVal);
+                        const precioUnitario = isTotal ? (pVal / (qVal || 1)) : pVal;
+                        
+                        const desc = isTotal ? '' : `$${precioUnitario.toFixed(2)} c/u`;
+
+                        htmlItems += `<div class="pos-item" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                            <div style="flex: 1; padding-right: 10px;">
+                                <div style="font-weight: 600;">${prod.qty}x ${escapeHTML(prod.name)}</div>
+                                <div style="font-size: 0.85em; color: #444;">${desc}</div>
+                            </div>
+                            <div style="font-weight: bold;">$${subtotal.toFixed(2)}</div>
+                        </div>`;
+                    }
+                });
+                document.getElementById('pos_resItems').innerHTML = htmlItems;
+                document.getElementById('pos_resTotal').innerText = `Total: $${total.toFixed(2)}`;
+                const selloPagado = document.getElementById('pos_selloPagado');
+                const selloCotizacion = document.getElementById('pos_selloCotizacion');
+                selloCotizacion.style.display = p.cotizacion ? 'block' : 'none';
+                document.getElementById('pos_mensajeGracias').innerText = p.cotizacion ? '¡GRACIAS POR SU PREFERENCIA!' : '¡GRACIAS POR SU COMPRA!';
+                if (p.cotizacion) {
+                    selloPagado.style.display = 'none';
+                    document.getElementById('pos_resAnticipo').style.display = 'none';
+                    document.getElementById('pos_resSaldo').style.display = 'none';
+                } else {
+                    document.getElementById('pos_resAnticipo').style.display = 'block';
+                    document.getElementById('pos_resSaldo').style.display = 'block';
+                    if(p.pagado) {
+                        selloPagado.style.display = 'block';
+                        document.getElementById('pos_resAnticipo').innerText = `Anticipo: -$${parseFloat(p.anticipo || 0).toFixed(2)}`;
+                        document.getElementById('pos_resSaldo').innerHTML = `PAGADO`;
+                    } else {
+                        selloPagado.style.display = 'none';
+                        document.getElementById('pos_resAnticipo').innerText = `Anticipo: -$${parseFloat(p.anticipo || 0).toFixed(2)}`;
+                        document.getElementById('pos_resSaldo').innerText = `Pendiente: $${(total - (p.anticipo || 0)).toFixed(2)}`;
+                    }
+                }
+                const ticketWrapper = document.getElementById('pos_ticket_wrapper');
+                const ticketEl = document.getElementById('pos_ticket');
+                ticketWrapper.style.display = 'flex';
+                ticketEl.style.display = 'block';
+                pos_programarImagenCompartir();
+                
+                if (!silent) {
+                    ticketEl.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        }
+
+        let pos_shareCache = { signature: '', file: null, blob: null, promise: null };
+        let pos_shareTimer = null;
+
+        function pos_firmaTicketCompartir() {
+            const p = pos_pedidos.find(x => x.id == pos_idActual) || {};
+            return JSON.stringify({
+                id: pos_idActual,
+                pedido: p,
+                tienda: document.getElementById('pos_nombreTiendaGlobal').value || '',
+                direccion: document.getElementById('pos_direccionTienda').value || '',
+                telefono: document.getElementById('pos_telefonoTienda').value || '',
+                logo: localStorage.getItem('pos_logoTienda') || ''
+            });
+        }
+
+        function pos_programarImagenCompartir() {
+            const signature = pos_firmaTicketCompartir();
+            if (pos_shareCache.signature === signature && (pos_shareCache.file || pos_shareCache.promise)) return;
+
+            pos_shareCache = { signature: '', file: null, blob: null, promise: null };
+            clearTimeout(pos_shareTimer);
+            pos_shareTimer = setTimeout(() => {
+                pos_prepararImagenCompartir().catch(() => {});
+            }, 350);
+        }
+
+        async function pos_prepararImagenCompartir() {
+            const signature = pos_firmaTicketCompartir();
+
+            if (pos_shareCache.signature === signature && pos_shareCache.file) {
+                return pos_shareCache.file;
+            }
+            if (pos_shareCache.signature === signature && pos_shareCache.promise) {
+                return pos_shareCache.promise;
+            }
+
+            const ticketElement = document.getElementById('pos_ticket');
+            if (!ticketElement) throw new Error('Ticket no disponible');
+
+            const promise = (async () => {
+                const scale = Math.min(Math.max(window.devicePixelRatio || 1, 1), 1.5);
+                const canvas = await html2canvas(ticketElement, {
+                    scale,
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: false
+                });
+
+                const blob = await new Promise((resolve, reject) => {
+                    canvas.toBlob(b => b ? resolve(b) : reject(new Error('No se pudo generar la imagen')), 'image/png');
+                });
+
+                const file = new File([blob], 'ticket-' + Date.now() + '.png', { type: 'image/png' });
+                pos_shareCache = { signature, file, blob, promise: null };
+                return file;
+            })();
+
+            pos_shareCache = { signature, file: null, blob: null, promise };
+
+            try {
+                return await promise;
+            } catch (err) {
+                if (pos_shareCache.signature === signature) {
+                    pos_shareCache = { signature: '', file: null, blob: null, promise: null };
+                }
+                throw err;
+            }
+        }
+
+        function pos_descargarTicketCompartir(file) {
+            const objectURL = URL.createObjectURL(file);
+            const link = document.createElement('a');
+            link.download = file.name || ('ticket-' + Date.now() + '.png');
+            link.href = objectURL;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(objectURL), 1000);
+        }
+
+        async function pos_compartirImagen() {
+            pos_previsualizarTicket(false, true);
+
+            try {
+                const file = await pos_prepararImagenCompartir();
+
+                if (navigator.share) {
+                    const puedeCompartirArchivo = !navigator.canShare || navigator.canShare({ files: [file] });
+                    if (puedeCompartirArchivo) {
+                        try {
+                            await navigator.share({
+                                files: [file],
+                                title: '',
+                                text: ''
+                            });
+                            return;
+                        } catch (shareErr) {
+                            if (shareErr && shareErr.name === 'AbortError') return;
+                            console.error('Error al compartir:', shareErr);
+                        }
+                    }
+                }
+
+                pos_descargarTicketCompartir(file);
+            } catch (err) {
+                console.error('Error al capturar imagen:', err);
+                alert('No se pudo generar la imagen. Intenta de nuevo.');
+            }
+        }
+
+        function pos_enviarWhatsApp() {
+            const msg = pos_previsualizarTicket(true);
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+    
+
+        // =========================================
+        // LIQUID GLASS NAV — DESLIZAMIENTO TIPO iOS
+        // Solo controla la interacción visual de la navbar.
+        // =========================================
+        (function () {
+            const nav = document.querySelector('.bottom-nav');
+            const slider = nav && nav.querySelector('.nav-slider');
+            if (!nav || !slider) return;
+
+            const items = Array.from(nav.querySelectorAll('.nav-item'));
+            let dragging = false, moved = false, startX = 0, currentX = 0;
+
+            function activeIndex() {
+                const i = items.findIndex(el => el.classList.contains('active'));
+                return i < 0 ? 0 : i;
+            }
+            function metrics() {
+                const inner = nav.clientWidth - 10;
+                return { step: inner / items.length, max: inner - inner / items.length };
+            }
+            function setSliderIndex(index, animate = true) {
+                const m = metrics();
+                if (!animate) nav.classList.add('dragging');
+                slider.style.transform = `translate3d(${m.step * index}px,0,0)`;
+                if (!animate) requestAnimationFrame(() => nav.classList.remove('dragging'));
+            }
+            function activate(index) {
+                index = Math.max(0, Math.min(items.length - 1, index));
+                if (index === 0) switchTab('pos');
+                else if (index === 1) switchTab('pedidos');
+                else switchTab('calc');
+                setSliderIndex(index, true);
+            }
+            function pointerX(e) { return e.clientX - nav.getBoundingClientRect().left - 5; }
+
+            nav.addEventListener('pointerdown', e => {
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                dragging = true; moved = false; startX = e.clientX; currentX = pointerX(e);
+                nav.classList.add('dragging');
+                try { nav.setPointerCapture(e.pointerId); } catch (_) {}
+            });
+            nav.addEventListener('pointermove', e => {
+                if (!dragging) return;
+                if (Math.abs(e.clientX - startX) > 4) moved = true;
+                if (!moved) return;
+                const m = metrics();
+                currentX = pointerX(e);
+                const x = Math.max(0, Math.min(m.max, currentX - m.step / 2));
+                slider.style.transform = `translate3d(${x}px,0,0)`;
+            });
+            function finish(e) {
+                if (!dragging) return;
+                dragging = false; nav.classList.remove('dragging');
+                if (!moved) {
+                    const tappedItem = e.target.closest('.nav-item');
+                    const tappedIndex = tappedItem ? items.indexOf(tappedItem) : activeIndex();
+                    setSliderIndex(tappedIndex >= 0 ? tappedIndex : activeIndex(), true);
+                    return;
+                }
+                const m = metrics();
+                const index = Math.max(0, Math.min(items.length - 1, Math.floor(currentX / m.step)));
+                activate(index);
+                e.preventDefault();
+            }
+            nav.addEventListener('pointerup', finish);
+            nav.addEventListener('pointercancel', () => { dragging=false; nav.classList.remove('dragging'); setSliderIndex(activeIndex(),true); });
+            nav.addEventListener('click', e => {
+                if (moved) { e.preventDefault(); e.stopPropagation(); moved=false; }
+            }, true);
+            window.addEventListener('resize', () => setSliderIndex(activeIndex(), false));
+            requestAnimationFrame(() => setSliderIndex(activeIndex(), false));
+        })();
+</script>
+</body>
+</html>
