@@ -227,6 +227,14 @@
         #pedido-detail-sheet.open{transform:translateY(0)}.pedido-detail-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.pedido-detail-head h3{margin:0;font-family:'Poppins',sans-serif;font-size:20px}.pedido-detail-close{width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.75);color:var(--samsung-secondary);font-size:17px;cursor:pointer}.pedido-detail-info{padding:16px;border-radius:22px;background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.65);margin-bottom:16px}.pedido-detail-row{display:flex;justify-content:space-between;gap:16px;font-size:13px;margin-bottom:9px}.pedido-detail-row span:first-child{color:var(--samsung-secondary)}.pedido-detail-products{font-size:13px;line-height:1.45;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,.05)}
         #pedido-detail-sheet textarea{width:100%;min-height:105px;resize:vertical;background:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.8);padding:16px 18px;border-radius:20px;font-size:15px;font-family:inherit;color:var(--samsung-text);outline:none}
 
+        /* NUEVO PEDIDO — modal compacto */
+        #nuevo-pedido-overlay{position:fixed;inset:0;background:rgba(0,0,0,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:130;display:none;align-items:center;justify-content:center;padding:24px}
+        #nuevo-pedido-modal{width:100%;max-width:390px;background:rgba(244,246,249,.94);backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);border:1px solid rgba(255,255,255,.65);border-radius:28px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.22);transform:scale(.96);opacity:0;transition:.22s ease}
+        #nuevo-pedido-modal.open{transform:scale(1);opacity:1}
+        #nuevo-pedido-modal h3{margin:0 0 18px;font-family:'Poppins',sans-serif;font-size:20px}
+        .nuevo-pedido-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+        .nuevo-pedido-actions .pos-btn{margin:0}
+
     
         .calc-inline-menu { margin-bottom: 0; }
         .calc-inline-menu li:last-child { margin-bottom: 0; }
@@ -361,8 +369,9 @@
             .menu-list li:active { background: rgba(255,255,255,.13); }
 
             .bottom-sheet,
-            #pedido-detail-sheet {
-                background: rgba(28,29,32,.90);
+            #pedido-detail-sheet,
+            #nuevo-pedido-modal {
+                background: rgba(28,29,32,.94);
                 border-color: rgba(255,255,255,.12);
                 box-shadow: 0 -4px 32px rgba(0,0,0,.35);
             }
@@ -560,11 +569,6 @@
                     <button class="pos-btn pos-btn-new" onclick="pos_crearNuevoTicket()"><i class="fa-solid fa-circle-plus"></i> Nuevo Pedido</button>
                 </div>
 
-<div class="input-group">
-                    <label>NOMBRE DEL CLIENTE</label>
-                    <input type="text" id="pos_nombreCliente" placeholder="Ej. Juan Pérez" oninput="pos_actualizarDatos()">
-                </div>
-                
                 <label style="display:block; font-size:13px; font-weight:600; color:var(--samsung-secondary); margin-bottom:10px; margin-left:4px;">PRODUCTOS / SERVICIOS</label>
                 <div id="pos_listaProductos"></div>
                 <button class="pos-btn pos-btn-add" onclick="pos_agregarFila()"><i class="fa-solid fa-plus"></i> Agregar Producto</button>
@@ -654,11 +658,25 @@
     </main>
 
 
+    <div id="nuevo-pedido-overlay" onclick="pos_cerrarNuevoPedido(event)">
+        <div id="nuevo-pedido-modal" onclick="event.stopPropagation()">
+            <h3>Nuevo pedido</h3>
+            <div class="input-group" style="margin-bottom:0;">
+                <label>NOMBRE DEL CLIENTE</label>
+                <input type="text" id="pos_nuevoNombreCliente" placeholder="Ej. Juan Pérez" autocomplete="off" onkeydown="if(event.key==='Enter') pos_confirmarNuevoTicket()">
+            </div>
+            <div class="nuevo-pedido-actions">
+                <button type="button" class="pos-btn pos-btn-new" onclick="pos_cerrarNuevoPedido()">Cancelar</button>
+                <button type="button" class="pos-btn pos-btn-view" onclick="pos_confirmarNuevoTicket()">Crear pedido</button>
+            </div>
+        </div>
+    </div>
+
     <div id="pedido-detail-overlay" onclick="pedidos_cerrarDetalle(event)">
         <div id="pedido-detail-sheet" onclick="event.stopPropagation()">
             <div class="pedido-detail-head"><h3>Detalle del pedido</h3><button class="pedido-detail-close" onclick="pedidos_cerrarDetalle()"><i class="fa-solid fa-xmark"></i></button></div>
             <div class="pedido-detail-info">
-                <div class="pedido-detail-row"><span>Cliente</span><strong id="pedido-det-cliente"></strong></div>
+                <div class="input-group"><label>NOMBRE DEL CLIENTE</label><input type="text" id="pedido-det-cliente" placeholder="Nombre del cliente" oninput="pedidos_guardarDetalle()"></div>
                 <div class="pedido-detail-row"><span>Total</span><strong id="pedido-det-total"></strong></div>
                 <div class="pedido-detail-row"><span>Anticipo</span><strong id="pedido-det-anticipo"></strong></div>
                 <div class="pedido-detail-row"><span>Saldo</span><strong id="pedido-det-saldo"></strong></div>
@@ -1336,8 +1354,8 @@
         }
         function pedidos_cambiarEstado(id,estado,event){if(event)event.stopPropagation();const p=pos_pedidos.find(x=>x.id==id);if(!p)return;p.estadoPedido=estado;localStorage.setItem('pos_pedidos',JSON.stringify(pos_pedidos));pos_asegurarTicketActivo();pos_cargarFormulario();pedidos_render();if(pedidos_idDetalle==id)pedidos_llenarDetalle(p)}
         function pedidos_abrirDetalle(id){const p=pos_pedidos.find(x=>x.id==id);if(!p)return;pedidos_idDetalle=p.id;pedidos_llenarDetalle(p);const o=document.getElementById('pedido-detail-overlay'),s=document.getElementById('pedido-detail-sheet');o.style.display='flex';setTimeout(()=>s.classList.add('open'),10)}
-        function pedidos_llenarDetalle(p){const t=pedidos_calcularTotal(p),a=parseFloat(p.anticipo||0);document.getElementById('pedido-det-cliente').innerText=p.nombre||'Sin Nombre';document.getElementById('pedido-det-total').innerText=pedidos_moneda(t);document.getElementById('pedido-det-anticipo').innerText=pedidos_moneda(a);document.getElementById('pedido-det-saldo').innerText=pedidos_moneda(p.pagado?0:Math.max(0,t-a));document.getElementById('pedido-det-productos').innerText=pedidos_resumenProductos(p);document.getElementById('pedido-det-fechaPedido').value=p.fechaPedido||'';document.getElementById('pedido-det-fechaEntrega').value=p.fechaEntrega||'';document.getElementById('pedido-det-estado').value=p.estadoPedido||'pendiente';document.getElementById('pedido-det-notas').value=p.notas||''}
-        function pedidos_guardarDetalle(){const p=pos_pedidos.find(x=>x.id==pedidos_idDetalle);if(!p)return;p.fechaPedido=document.getElementById('pedido-det-fechaPedido').value||'';p.fechaEntrega=document.getElementById('pedido-det-fechaEntrega').value||'';p.estadoPedido=document.getElementById('pedido-det-estado').value||'pendiente';p.notas=document.getElementById('pedido-det-notas').value||'';localStorage.setItem('pos_pedidos',JSON.stringify(pos_pedidos));pos_asegurarTicketActivo();pos_cargarFormulario();pedidos_render()}
+        function pedidos_llenarDetalle(p){const t=pedidos_calcularTotal(p),a=parseFloat(p.anticipo||0);document.getElementById('pedido-det-cliente').value=p.nombre||'';document.getElementById('pedido-det-total').innerText=pedidos_moneda(t);document.getElementById('pedido-det-anticipo').innerText=pedidos_moneda(a);document.getElementById('pedido-det-saldo').innerText=pedidos_moneda(p.pagado?0:Math.max(0,t-a));document.getElementById('pedido-det-productos').innerText=pedidos_resumenProductos(p);document.getElementById('pedido-det-fechaPedido').value=p.fechaPedido||'';document.getElementById('pedido-det-fechaEntrega').value=p.fechaEntrega||'';document.getElementById('pedido-det-estado').value=p.estadoPedido||'pendiente';document.getElementById('pedido-det-notas').value=p.notas||''}
+        function pedidos_guardarDetalle(){const p=pos_pedidos.find(x=>x.id==pedidos_idDetalle);if(!p)return;p.nombre=document.getElementById('pedido-det-cliente').value||'';p.fechaPedido=document.getElementById('pedido-det-fechaPedido').value||'';p.fechaEntrega=document.getElementById('pedido-det-fechaEntrega').value||'';p.estadoPedido=document.getElementById('pedido-det-estado').value||'pendiente';p.notas=document.getElementById('pedido-det-notas').value||'';localStorage.setItem('pos_pedidos',JSON.stringify(pos_pedidos));pos_asegurarTicketActivo();pos_cargarFormulario();pedidos_render()}
         function pedidos_cerrarDetalle(event){if(event&&event.target!==document.getElementById('pedido-detail-overlay'))return;const o=document.getElementById('pedido-detail-overlay'),s=document.getElementById('pedido-detail-sheet');s.classList.remove('open');setTimeout(()=>{o.style.display='none';pedidos_idDetalle=null},300)}
         function pedidos_abrirEnTicket(){const p=pos_pedidos.find(x=>x.id==pedidos_idDetalle);if(!p)return;pos_idActual=p.id;localStorage.setItem('pos_idActual',pos_idActual);pos_renderSelector();pos_cargarFormulario();pedidos_cerrarDetalle();switchTab('pos')}
 
@@ -1424,7 +1442,6 @@
         function pos_cargarFormulario() {
             const p = pos_pedidos.find(x => x.id == pos_idActual);
             if(!p) return;
-            document.getElementById('pos_nombreCliente').value = p.nombre || '';
             document.getElementById('pos_anticipo').value = p.anticipo || '';
             document.getElementById('pos_esPagado').checked = !!p.pagado;
             document.getElementById('pos_esCotizacion').checked = !!p.cotizacion;
@@ -1446,7 +1463,6 @@
         function pos_actualizarDatos() {
             const p = pos_pedidos.find(x => x.id == pos_idActual);
             if(!p) return;
-            p.nombre = document.getElementById('pos_nombreCliente').value;
             p.anticipo = document.getElementById('pos_anticipo').value;
             p.pagado = document.getElementById('pos_esPagado').checked;
             p.cotizacion = document.getElementById('pos_esCotizacion').checked;
@@ -1476,11 +1492,33 @@
         }
 
         function pos_crearNuevoTicket() {
-            const nuevo = { id: Date.now(), nombre: 'Nuevo Cliente', productos: [], anticipo: 0, pagado: false, cotizacion: false, cotizacionModo: 'normal', fechaPedido: pedidos_fechaHoy(), fechaEntrega: '', estadoPedido: 'pendiente', notas: '' };
+            const overlay = document.getElementById('nuevo-pedido-overlay');
+            const modal = document.getElementById('nuevo-pedido-modal');
+            const input = document.getElementById('pos_nuevoNombreCliente');
+            input.value = '';
+            overlay.style.display = 'flex';
+            requestAnimationFrame(() => modal.classList.add('open'));
+            setTimeout(() => input.focus(), 120);
+        }
+
+        function pos_cerrarNuevoPedido(event) {
+            if (event && event.target !== document.getElementById('nuevo-pedido-overlay')) return;
+            const overlay = document.getElementById('nuevo-pedido-overlay');
+            const modal = document.getElementById('nuevo-pedido-modal');
+            modal.classList.remove('open');
+            setTimeout(() => { overlay.style.display = 'none'; }, 220);
+        }
+
+        function pos_confirmarNuevoTicket() {
+            const input = document.getElementById('pos_nuevoNombreCliente');
+            const nombre = input.value.trim();
+            if (!nombre) { input.focus(); return; }
+            const nuevo = { id: Date.now(), nombre, productos: [], anticipo: 0, pagado: false, cotizacion: false, cotizacionModo: 'normal', fechaPedido: pedidos_fechaHoy(), fechaEntrega: '', estadoPedido: 'pendiente', notas: '' };
             pos_pedidos.push(nuevo);
             localStorage.setItem('pos_pedidos', JSON.stringify(pos_pedidos));
             pos_idActual = nuevo.id;
             localStorage.setItem('pos_idActual', pos_idActual);
+            pos_cerrarNuevoPedido();
             pos_cargarFormulario();
         }
 
