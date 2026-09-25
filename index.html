@@ -44,7 +44,10 @@
             align-items: center;
         }
 
-        header h1 { font-family: 'Poppins', sans-serif; font-size: 28px; margin: 0; }
+        header h1 { font-family: 'Poppins', sans-serif; font-size: 28px; margin: 0; display:flex; align-items:center; gap:10px; }
+        .header-back-btn { display:none; border:0; background:transparent; color:var(--samsung-blue); padding:0; margin:0; font-size:24px; line-height:1; cursor:pointer; }
+        .header-back-btn.show { display:inline-flex; align-items:center; justify-content:center; }
+        .header-back-btn:active { transform:scale(.92); }
         
         .btn-icon { background: none; border: none; font-size: 24px; color: var(--samsung-blue); cursor: pointer; }
 
@@ -460,7 +463,7 @@
     </svg>
 
     <header>
-        <h1 id="header-title">Ticket</h1>
+        <h1><button type="button" id="header-back-btn" class="header-back-btn" onclick="calcHeaderBack()" aria-label="Volver"><i class="fa-solid fa-chevron-left"></i></button><span id="header-title">Ticket</span></h1>
         <button class="btn-icon" onclick="toggleSettings()"><i class="fa-solid fa-gear"></i></button>
     </header>
 
@@ -657,8 +660,6 @@
 
         <div id="view-calc-category" class="tab-view">
             <div class="card">
-                <div class="back-btn" onclick="switchTab('calc')"><i class="fa-solid fa-arrow-left"></i> Volver</div>
-                <h3 id="inline-calc-title" style="margin-top:0; font-family:'Poppins', sans-serif; font-size:20px; margin-bottom:20px;"></h3>
                 <ul class="menu-list calc-inline-menu" id="inline-calc-list"></ul>
             </div>
         </div>
@@ -675,7 +676,7 @@
             <h3>Nuevo pedido</h3>
             <div class="input-group" style="margin-bottom:0;">
                 <label>NOMBRE DEL CLIENTE</label>
-                <input type="text" id="pos_nuevoNombreCliente" placeholder="Ej. Joaquin" autocomplete="off" onkeydown="if(event.key==='Enter') pos_confirmarNuevoTicket()">
+                <input type="text" id="pos_nuevoNombreCliente" placeholder="Ej. Juan Pérez" autocomplete="off" onkeydown="if(event.key==='Enter') pos_confirmarNuevoTicket()">
             </div>
             <div class="nuevo-pedido-actions">
                 <button type="button" class="pos-btn pos-btn-new" onclick="pos_cerrarNuevoPedido()">Cancelar</button>
@@ -1155,7 +1156,31 @@
             switchTab(tab);
         }
 
+        let currentCalcCategory = null;
+
+        function calcHeaderBack() {
+            const categoryView = document.getElementById('view-calc-category');
+
+            // Si estamos en la lista de materiales de una máquina,
+            // volver a la pantalla principal de Calculadora.
+            if (categoryView && categoryView.classList.contains('active')) {
+                currentCalcCategory = null;
+                switchTab('calc');
+                return;
+            }
+
+            // Si estamos dentro de un material, volver a su máquina.
+            if (currentCalcCategory) {
+                showInlineSubMenu(currentCalcCategory);
+                return;
+            }
+
+            switchTab('calc');
+        }
+
         function switchTab(tab) {
+            const headerBackBtn = document.getElementById('header-back-btn');
+            if (headerBackBtn) headerBackBtn.classList.remove('show');
             document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             
@@ -1173,27 +1198,34 @@
                 document.getElementById('nav-calc').classList.add('active');
                 
                 if(tab === 'calc') {
+                    currentCalcCategory = null;
                     document.getElementById('header-title').innerText = 'Calculadora';
                     if (typeof liquidGlassSyncToActive === 'function') liquidGlassSyncToActive();
                     return;
                 }
 
-                let matName = tab.toUpperCase(); 
+                let matName = tab.toUpperCase();
+                let parentCategory = null;
                 dyn_machines.forEach(machine => {
                     const found = (dyn_materials[machine.id] || []).find(m => m.id === tab);
-                    if(found) matName = found.name;
+                    if(found) {
+                        matName = found.name;
+                        parentCategory = machine.id;
+                    }
                 });
                 document.getElementById('header-title').innerText = matName;
+                if (parentCategory) {
+                    currentCalcCategory = parentCategory;
+                    if (headerBackBtn) headerBackBtn.classList.add('show');
+                }
             }
         }
 
         function showInlineSubMenu(category) {
+            currentCalcCategory = category;
             const machine = dyn_machines.find(m => m.id === category);
             const list = document.getElementById('inline-calc-list');
-            const title = document.getElementById('inline-calc-title');
-            if (!machine || !list || !title || !dyn_materials[category]) return;
-
-            title.innerText = machine.name;
+            if (!machine || !list || !dyn_materials[category]) return;
             list.innerHTML = dyn_materials[category].length
                 ? dyn_materials[category].map(mat => {
                     const icon = 'fa-chevron-right';
@@ -1206,6 +1238,8 @@
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById('nav-calc').classList.add('active');
             document.getElementById('header-title').innerText = machine.name;
+            const headerBackBtn = document.getElementById('header-back-btn');
+            if (headerBackBtn) headerBackBtn.classList.add('show');
             if (typeof liquidGlassSyncToActive === 'function') liquidGlassSyncToActive();
         }
 
