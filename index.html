@@ -1006,6 +1006,7 @@
                                         <div class="res-line"><span>Área:</span> <span class="val"><span id="out-a-${t}">0</span> cm²</span></div>
                                         <div class="res-line"><span>Costo Material:</span> <span class="val">$<span id="out-c-${t}">0</span></span></div>
                                         <div class="res-line"><span>Precio Venta:</span> <span class="price-val">$<span id="out-p-${t}">0</span></span></div>
+                                        <div class="res-line"><span>Ganancia:</span> <span class="val">$<span id="out-profit-${t}">0</span></span></div>
                                     </div>
                                 </div>
                             </div>`;
@@ -1314,6 +1315,7 @@
                 document.getElementById('out-a-' + type).innerText = area.toLocaleString();
                 document.getElementById('out-c-' + type).innerText = cost.toFixed(2);
                 document.getElementById('out-p-' + type).innerText = (cost * mult).toFixed(2);
+                document.getElementById('out-profit-' + type).innerText = (cost * mult - cost).toFixed(2);
                 document.getElementById('res-' + type).style.display = 'block';
             } else {
                 alert("Ingresa medidas válidas.");
