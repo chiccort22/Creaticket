@@ -1038,7 +1038,7 @@
                 'dyn_materials',
                 'multiplier',
                 'p-time3d',
-                ...Object.keys(localStorage).filter(k => k.startsWith('ct3d-')),
+                ...Object.keys(localStorage).filter(k => k.startsWith('ct3d-') || k.startsWith('p-')),
                 'pos_direccionTienda',
                 'pos_idActual',
                 'pos_logoTienda',
@@ -1047,11 +1047,21 @@
                 'pos_telefonoTienda'
         ];
 
+        // Las claves de materiales (p-...) y tarifas (ct3d-...) son dinámicas.
+        // Se vuelven a consultar al exportar y restaurar para incluir las nuevas.
+        function clavesCreaTicket() {
+            return [...new Set([
+                ...CREATICICKET_STORAGE_KEYS,
+                ...Object.keys(localStorage).filter(k => k.startsWith('p-') || k.startsWith('ct3d-'))
+            ])];
+        }
+
         function crearCopiaSeguridad() {
             try {
                 const datos = {};
 
-                CREATICICKET_STORAGE_KEYS.forEach(clave => {
+                const clavesBackup = clavesCreaTicket();
+                clavesBackup.forEach(clave => {
                     const valor = localStorage.getItem(clave);
                     if (valor !== null) datos[clave] = valor;
                 });
@@ -1060,7 +1070,7 @@
                     app: 'CreaTicket',
                     version: '1.1',
                     createdAt: new Date().toISOString(),
-                    storageKeys: CREATICICKET_STORAGE_KEYS,
+                    storageKeys: clavesBackup,
                     localStorage: datos
                 };
 
@@ -1120,10 +1130,10 @@
                     }
 
                     // Elimina únicamente los datos propios de CreaTicket.
-                    CREATICICKET_STORAGE_KEYS.forEach(clave => localStorage.removeItem(clave));
+                    clavesCreaTicket().forEach(clave => localStorage.removeItem(clave));
 
                     // Restaura únicamente claves reconocidas por CreaTicket.
-                    CREATICICKET_STORAGE_KEYS.forEach(clave => {
+                    [...new Set([...CREATICICKET_STORAGE_KEYS, ...claves.filter(clave => clave.startsWith('p-') || clave.startsWith('ct3d-'))])].forEach(clave => {
                         const valor = copia.localStorage[clave];
                         if (typeof valor === 'string') {
                             localStorage.setItem(clave, valor);
