@@ -487,8 +487,7 @@
                     <div id="machines-settings-fold" class="settings-fold-body">
                         <div id="cfg-machines-list"></div>
             <button class="pos-btn pos-btn-new" onclick="addMachine()" style="margin-bottom:24px;"><i class="fa-solid fa-plus"></i> Agregar Máquina / Categoría</button>
-                        <p style="font-size: 13px; font-weight: 600; color: var(--samsung-secondary); margin-bottom: 12px; margin-top: 24px;">Configuración Adicional 3D:</p>
-                        <div class="input-group"><label>Costo de Tiempo ($ / minuto)</label><input type="number" id="price-time3d" step="0.0001" oninput="saveConfig()"></div>
+
                     
                     </div>
                 </div>
@@ -809,13 +808,14 @@
 
             container.innerHTML = dyn_machines.map(machine => {
                 const cat = machine.id;
-                const unit = machine.type === '3d' ? '$ / gramo' : '$ / cm²';
+                const unit = machine.type === '3d' ? '$ / kilogramo' : '$ / cm²';
                 const mats = (dyn_materials[cat] || []).map(mat => {
-                    const price = localStorage.getItem('p-' + mat.id) || '';
+                    const rawPrice = localStorage.getItem('p-' + mat.id) || '';
+                    const price = machine.type === '3d' && rawPrice !== '' ? Number((Number(rawPrice)*1000).toPrecision(12)) : rawPrice;
                     return `
                         <div class="pos-prod-row" style="margin-bottom:8px;background:rgba(255,255,255,0.6);padding:8px;border-radius:20px;border:1px solid rgba(255,255,255,0.8);">
                             <input type="text" value="${escapeHTML(mat.name)}" onchange="updateMaterialName('${cat}','${mat.id}',this.value)" style="flex:1;min-width:120px;font-size:14px;padding:12px;background:rgba(255,255,255,0.8);" placeholder="Nombre">
-                            <input type="number" value="${price}" step="0.0001" onchange="updateMaterialPrice('${mat.id}',this.value)" style="width:90px;font-size:14px;padding:12px;background:rgba(255,255,255,0.8);" placeholder="$ Precio">
+                            <input type="number" value="${price}" step="0.0001" onchange="updateMaterialPrice('${mat.id}',this.value,'${cat}')" style="width:90px;font-size:14px;padding:12px;background:rgba(255,255,255,0.8);" placeholder="$ Precio">
                             <button class="pos-btn-del-row" style="width:44px;height:44px;background:transparent;color:var(--samsung-danger);" onclick="deleteMaterial('${cat}','${mat.id}')"><i class="fa-solid fa-trash-can"></i></button>
                         </div>`;
                 }).join('');
@@ -829,6 +829,10 @@
                         <label style="display:block;font-size:11px;font-weight:600;color:var(--samsung-secondary);margin:0 0 9px 4px;">MATERIALES · ${unit}</label>
                         ${mats || '<div style="font-size:13px;color:var(--samsung-secondary);padding:8px 4px 12px;">Sin materiales.</div>'}
                         <button class="pos-btn pos-btn-new" onclick="addMaterial('${cat}')"><i class="fa-solid fa-plus"></i> Agregar Material</button>
+                        ${machine.type === '3d' ? `<div style="margin-top:15px;padding:15px;border-radius:18px;background:rgba(127,127,127,.09)">
+                            <div class="input-group"><label>Luz eléctrica ($ por minuto)</label><input type="number" min="0" step="0.00001" value="${get3DRate(cat,'power')}" onchange="set3DRate('${cat}','power',this.value)"></div>
+                            <div class="input-group" style="margin-bottom:0"><label>Desgaste / mantenimiento ($ por hora)</label><input type="number" min="0" step="0.01" value="${get3DRate(cat,'wear')}" onchange="set3DRate('${cat}','wear',this.value)"></div>
+                        </div>` : ''}
                     </div>`;
             }).join('');
         }
@@ -912,15 +916,15 @@
             }
         }
 
-        function updateMaterialPrice(id, newPrice) {
-            localStorage.setItem('p-' + id, newPrice);
+        function updateMaterialPrice(id, newPrice, cat) {
+            localStorage.setItem('p-' + id, machineType(cat) === '3d' ? String(Number(newPrice)/1000) : newPrice);
         }
 
         function addMaterial(cat) {
             const name = prompt("Ingresa el nombre del nuevo material:");
             if (!name || name.trim() === '') return;
             
-            let priceStr = prompt("Ingresa el precio " + (machineType(cat) === '3d' ? 'por gramo' : 'por cm²') + " ($):");
+            let priceStr = prompt("Ingresa el precio " + (machineType(cat) === '3d' ? 'por kilogramo' : 'por cm²') + " ($):");
             if (priceStr === null) return;
             
             let price = parseFloat(priceStr.replace(',', '.'));
@@ -929,7 +933,7 @@
             const id = cat + '_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
             dyn_materials[cat].push({ id, name: name.trim() });
             localStorage.setItem('dyn_materials', JSON.stringify(dyn_materials));
-            localStorage.setItem('p-' + id, price);
+            localStorage.setItem('p-' + id, machineType(cat) === '3d' ? price / 1000 : price);
 
             refreshDynamicUI();
         }
@@ -971,19 +975,26 @@
 
                     if (machine.type === '3d') {
                         html += `
-                            <div id="view-${t}" class="tab-view">
-                                <div class="card">
-                                    <div class="input-group"><label>PESO DE FILAMENTO (GRAMOS)</label><input type="number" id="w-${t}" placeholder="0"></div>
-                                    <div class="input-group"><label>TIEMPO DE IMPRESIÓN (MINUTOS)</label><input type="number" id="t-${t}" placeholder="0"></div>
-                                    <button class="btn-calc" onclick="calc3D('${t}')">Calcular</button>
-                                    <div id="res-${t}" class="result-box">
-                                        <div class="res-line" style="font-size:13px;color:var(--samsung-secondary);"><span>Peso: <span id="out-w-${t}">0</span>g | Tiempo: <span id="out-t-${t}">0</span>min</span></div>
-                                        <div class="res-line"><span>Costo Filamento:</span> <span class="val">$<span id="out-cf-${t}">0</span></span></div>
-                                        <div class="res-line"><span>Costo Tiempo:</span> <span class="val">$<span id="out-ct-${t}">0</span></span></div>
-                                        <div class="res-line" style="border-top:1px solid rgba(0,0,0,0.05);padding-top:12px;"><span>Precio Venta:</span> <span class="price-val">$<span id="out-p-${t}">0</span></span></div>
-                                    </div>
+                            <div id="view-${t}" class="tab-view"><div class="card">
+                                <div class="input-group"><label>PESO DE LA PIEZA (GRAMOS)</label><input type="number" min="0" step="any" id="w-${t}" placeholder="0" oninput="calc3D('${t}')"></div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                                    <div class="input-group"><label>HORAS</label><input type="number" min="0" id="h-${t}" placeholder="0" oninput="calc3D('${t}')"></div>
+                                    <div class="input-group"><label>MINUTOS</label><input type="number" min="0" id="t-${t}" placeholder="0" oninput="calc3D('${t}')"></div>
                                 </div>
-                            </div>`;
+                                <div class="input-group"><label>MARGEN DE GANANCIA</label><select id="margin-${t}" onchange="toggle3DMargin('${t}');calc3D('${t}')"><option value="2">2x</option><option value="3" selected>3x</option><option value="4">4x</option><option value="custom">Personalizado (%)</option></select></div>
+                                <div class="input-group" id="custom-wrap-${t}" style="display:none"><label>MARGEN PERSONALIZADO (%)</label><input type="number" id="custom-${t}" value="200" step="any" oninput="calc3D('${t}')"></div>
+                                <div class="input-group"><label>COSTOS EXTRAS ($)</label><input type="number" min="0" step="any" id="extra-${t}" placeholder="0" oninput="calc3D('${t}')"></div>
+                                <button class="btn-calc" onclick="calc3D('${t}',true)">Calcular</button>
+                                <div id="res-${t}" class="result-box">
+                                    <div class="res-line"><span>Material:</span><span class="val" id="out-cf-${t}">$0.00</span></div>
+                                    <div class="res-line"><span>Luz eléctrica:</span><span class="val" id="out-energy-${t}">$0.00</span></div>
+                                    <div class="res-line"><span>Desgaste / mantenimiento:</span><span class="val" id="out-wear-${t}">$0.00</span></div>
+                                    <div class="res-line"><span>Extras:</span><span class="val" id="out-extra-${t}">$0.00</span></div>
+                                    <div class="res-line"><span>Costo de producción:</span><span class="val" id="out-total-${t}">$0.00</span></div>
+                                    <div class="res-line" style="border-top:1px solid rgba(127,127,127,.2);padding-top:12px"><span>Precio de venta:</span><span class="price-val" id="out-p-${t}">$0.00</span></div>
+                                    <div class="res-line"><span>Ganancia:</span><span class="val" id="out-profit-${t}">$0.00</span></div>
+                                </div>
+                            </div></div>`;
                     } else {
                         html += `
                             <div id="view-${t}" class="tab-view">
@@ -1026,6 +1037,7 @@
                 'dyn_materials',
                 'multiplier',
                 'p-time3d',
+                ...Object.keys(localStorage).filter(k => k.startsWith('ct3d-')),
                 'pos_direccionTienda',
                 'pos_idActual',
                 'pos_logoTienda',
@@ -1277,7 +1289,6 @@
         }
 
         function saveConfig() {
-            localStorage.setItem('p-time3d', document.getElementById('price-time3d').value);
             localStorage.setItem('multiplier', document.getElementById('multiplier').value);
         }
 
@@ -1285,8 +1296,6 @@
             loadMaterials();
             refreshDynamicUI();
             
-            const pTime = localStorage.getItem('p-time3d');
-            if(pTime) document.getElementById('price-time3d').value = pTime;
             
             const m = localStorage.getItem('multiplier') || 3;
             document.getElementById('multiplier').value = m;
@@ -1311,33 +1320,41 @@
             }
         }
 
-        function calc3D(type) {
-            const w = parseFloat(document.getElementById('w-' + type).value) || 0;
-            const t = parseFloat(document.getElementById('t-' + type).value) || 0;
-            const pricePerG = parseFloat(localStorage.getItem('p-' + type)) || 0;
-            const pricePerMin = parseFloat(localStorage.getItem('p-time3d')) || 0;
-
-            if (pricePerG === 0 || pricePerMin === 0) { 
-                alert("¡Primero configura los precios de filamento y tiempo 3D en ajustes!"); 
-                return; 
-            }
-            
-            if (w > 0 || t > 0) {
-                const costFilament = w * pricePerG;
-                const costTime = t * pricePerMin;
-                const salePrice = costFilament + costTime; 
-                
-                document.getElementById('out-w-' + type).innerText = w.toLocaleString();
-                document.getElementById('out-t-' + type).innerText = t.toLocaleString();
-                document.getElementById('out-cf-' + type).innerText = costFilament.toFixed(2);
-                document.getElementById('out-ct-' + type).innerText = costTime.toFixed(2);
-                document.getElementById('out-p-' + type).innerText = salePrice.toFixed(2);
-                document.getElementById('res-' + type).style.display = 'block';
-            } else {
-                alert("Ingresa peso o tiempo válido.");
-            }
+        // Parámetros independientes por máquina; compatibilidad con costo de tiempo antiguo.
+        function get3DRate(cat, kind) {
+            const key = 'ct3d-' + cat + '-' + kind;
+            const saved = localStorage.getItem(key);
+            if (saved !== null) return Math.max(0,Number(saved)||0);
+            if (kind === 'power') return Math.max(0,Number(localStorage.getItem('p-time3d'))||0);
+            return 3;
         }
-
+        function set3DRate(cat, kind, value) {
+            localStorage.setItem('ct3d-' + cat + '-' + kind, String(Math.max(0,Number(value)||0)));
+        }
+        function toggle3DMargin(type) {
+            document.getElementById('custom-wrap-' + type).style.display = document.getElementById('margin-' + type).value === 'custom' ? 'block' : 'none';
+        }
+        function calc3D(type, validate=false) {
+            const get = id => Math.max(0,Number(document.getElementById(id).value)||0);
+            const w=get('w-'+type), h=get('h-'+type), min=get('t-'+type), extras=get('extra-'+type);
+            if (validate && w<=0 && h<=0 && min<=0) { alert('Ingresa peso o tiempo válido.'); return; }
+            const machine=dyn_machines.find(m=>(dyn_materials[m.id]||[]).some(mat=>mat.id===type));
+            if (!machine) return;
+            const gramsCost=Math.max(0,Number(localStorage.getItem('p-'+type))||0);
+            if (validate && gramsCost<=0) { alert('Configura el precio del material en ajustes.'); return; }
+            const totalMinutes=h*60+min;
+            const material=w*gramsCost;
+            const energy=totalMinutes*get3DRate(machine.id,'power');
+            const wear=totalMinutes/60*get3DRate(machine.id,'wear');
+            const total=material+energy+wear+extras;
+            const margin=document.getElementById('margin-'+type).value;
+            const factor=margin==='custom' ? 1+get('custom-'+type)/100 : Number(margin);
+            const sale=total*factor;
+            const write=(name,n)=>document.getElementById('out-'+name+'-'+type).textContent='$'+n.toFixed(2);
+            write('cf',material);write('energy',energy);write('wear',wear);write('extra',extras);
+            write('total',total);write('p',sale);write('profit',sale-total);
+            document.getElementById('res-'+type).style.display='block';
+        }
 
         // =========================================
         // PEDIDOS - AGENDA / ORGANIZADOR
