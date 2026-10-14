@@ -1,248 +1,79 @@
-/* =========================================================
-   CreaTicket v6.7 — Service Worker Offline
-   GitHub Pages / PWA / iOS
-   ========================================================= */
-
-const CACHE_VERSION = 'creaticket-v6.7-offline-v1';
-const APP_CACHE = `${CACHE_VERSION}-app`;
-const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
-
-/*
-   En GitHub el archivo principal se llama index.html.
-   "./" permite que funcione correctamente dentro de la
-   dirección del repositorio de GitHub Pages.
-*/
-const APP_SHELL = [
-  './',
-  './index.html'
-];
-
-
-/* =========================================================
-   INSTALACIÓN
-   Guarda CreaTicket para poder arrancar sin Internet.
-   ========================================================= */
+// Inicio inmediato desde caché; actualización de HTML en segundo plano.
+const CACHE = 'creaticket-v6.7-offline-v2';
+const PREFIX = 'creaticket-v6.7-offline-';
+const HOME = new URL('./index.html', self.registration.scope).href;
+const SHELL = [HOME, new URL('./manifest.webmanifest', self.registration.scope).href];
 
 self.addEventListener('install', event => {
-
-  event.waitUntil(
-    caches.open(APP_CACHE)
-      .then(cache => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
-  );
-
+  // No bloqueamos la instalación por una red lenta ni por iconos ausentes.
+  event.waitUntil(self.skipWaiting());
 });
-
-
-/* =========================================================
-   ACTIVACIÓN
-   Elimina cachés antiguas al cambiar de versión.
-   ========================================================= */
 
 self.addEventListener('activate', event => {
-
-  event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(
-
-        keys
-          .filter(key =>
-            key !== APP_CACHE &&
-            key !== RUNTIME_CACHE
-          )
-          .map(key => caches.delete(key))
-
-      ))
-      .then(() => self.clients.claim())
-  );
-
+  event.waitUntil(self.clients.claim());
 });
 
+async function cachedHome() {
+  const current = await caches.open(CACHE);
+  let hit = await current.match(HOME);
+  if (hit) return hit;
+  // Conservar el HTML de la versión anterior durante la migración.
+  const keys = (await caches.keys()).filter(k => k.startsWith(PREFIX) && k !== CACHE);
+  for (const key of keys) {
+    hit = await (await caches.open(key)).match(HOME);
+    if (hit) {
+      await current.put(HOME, hit.clone());
+      return hit;
+    }
+  }
+  return null;
+}
 
-/* =========================================================
-   FETCH
-   Control de funcionamiento Online / Offline
-   ========================================================= */
+async function refreshHome() {
+  const response = await fetch(HOME, {cache: 'no-store'});
+  if (response.ok && response.type !== 'opaque') {
+    const cache = await caches.open(CACHE);
+    await cache.put(HOME, response.clone());
+  }
+}
 
 self.addEventListener('fetch', event => {
+  const req = event.request;
+  if (req.method !== 'GET' || !/^https?:/.test(req.url)) return;
+  const url = new URL(req.url);
+  const local = url.origin === self.location.origin && url.pathname.startsWith(new URL(self.registration.scope).pathname);
+  const navigation = req.mode === 'navigate' || (local && (url.pathname === new URL(HOME).pathname || url.pathname === new URL(self.registration.scope).pathname));
 
-  const request = event.request;
-
-  if (request.method !== 'GET') {
+  if (navigation) {
+    event.respondWith((async () => {
+      const cached = await cachedHome();
+      if (cached) {
+        event.waitUntil(refreshHome().catch(() => {}));
+        return cached;
+      }
+      // Primera apertura: aún no hay HTML local.
+      try {
+        const response = await fetch(req);
+        if (response.ok) await (await caches.open(CACHE)).put(HOME, response.clone());
+        return response;
+      } catch (_) {
+        return new Response('Sin conexión. Abre la aplicación una vez con internet para guardar sus archivos.', {status: 503, headers: {'Content-Type': 'text/plain; charset=utf-8'}});
+      }
+    })());
     return;
   }
 
-
-  /* ---------------------------------------------------------
-     HTML / NAVEGACIÓN
-
-     ONLINE:
-     Obtiene la versión más reciente de CreaTicket y actualiza
-     la copia almacenada.
-
-     OFFLINE:
-     Abre la última versión almacenada.
-     --------------------------------------------------------- */
-
-  if (request.mode === 'navigate') {
-
-    event.respondWith(
-
-      fetch(request)
-
-        .then(response => {
-
-          if (response && response.ok) {
-
-            const copy = response.clone();
-
-            caches.open(APP_CACHE)
-              .then(cache => cache.put(request, copy));
-
-          }
-
-          return response;
-
-        })
-
-        .catch(async () => {
-
-          const exact = await caches.match(request);
-
-          if (exact) {
-            return exact;
-          }
-
-
-          const index = await caches.match('./index.html');
-
-          if (index) {
-            return index;
-          }
-
-
-          const root = await caches.match('./');
-
-          if (root) {
-            return root;
-          }
-
-
-          return new Response(
-
-            `<!doctype html>
-            <html lang="es">
-            <head>
-              <meta charset="UTF-8">
-              <meta name="viewport"
-                    content="width=device-width,initial-scale=1">
-              <title>CreaTicket</title>
-            </head>
-            <body>
-              <h2>Sin conexión</h2>
-              <p>
-                Abre CreaTicket una vez con Internet
-                para guardar la aplicación.
-              </p>
-            </body>
-            </html>`,
-
-            {
-              headers: {
-                'Content-Type':
-                  'text/html; charset=utf-8'
-              }
-            }
-
-          );
-
-        })
-
-    );
-
-    return;
-
-  }
-
-
-  /* ---------------------------------------------------------
-     RECURSOS
-
-     Aquí se almacenarán automáticamente:
-
-     • Google Fonts
-     • Poppins
-     • Inter
-     • Font Awesome
-     • Fuentes de Font Awesome
-     • html2canvas
-     • Otros recursos utilizados por CreaTicket
-
-     Una vez descargados con Internet quedarán disponibles
-     posteriormente sin conexión.
-     --------------------------------------------------------- */
-
-  event.respondWith(
-
-    caches.match(request)
-
-      .then(cached => {
-
-        if (cached) {
-          return cached;
-        }
-
-
-        return fetch(request)
-
-          .then(response => {
-
-            if (!response) {
-              return response;
-            }
-
-
-            /*
-               "opaque" permite almacenar recursos procedentes
-               de dominios externos/CDN.
-            */
-
-            if (
-              response.ok ||
-              response.type === 'opaque'
-            ) {
-
-              const copy = response.clone();
-
-              caches.open(RUNTIME_CACHE)
-                .then(cache =>
-                  cache.put(request, copy)
-                );
-
-            }
-
-
-            return response;
-
-          })
-
-          .catch(() => cached);
-
-      })
-
-  );
-
-});
-
-
-/* =========================================================
-   ACTUALIZACIONES
-   ========================================================= */
-
-self.addEventListener('message', event => {
-
-  if (event.data === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-
+  // Los recursos externos (Tailwind, fuentes, etc.) se reutilizan si ya se descargaron.
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const cached = await cache.match(req) || await caches.match(req);
+    if (cached) return cached;
+    try {
+      const response = await fetch(req);
+      if (response.ok || response.type === 'opaque') event.waitUntil(cache.put(req, response.clone()).catch(() => {}));
+      return response;
+    } catch (_) {
+      return Response.error();
+    }
+  })());
 });
